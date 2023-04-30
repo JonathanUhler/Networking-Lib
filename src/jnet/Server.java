@@ -1,0 +1,266 @@
+package jnet;
+
+
+import java.net.Socket;
+import java.lang.Thread;
+import java.util.Map;
+import java.util.HashMap;
+
+
+/**
+ * C-style server template. This class provides the framework to create a server compatible with the
+ * processes of this library. By default, the server runs on 127.0.0.1:9000, but this can be changed
+ * with the second constructor.
+ * <p>
+ * Some notable abstract methods include:
+ * <table style="border: 1px solid black">
+ *  <caption>Abstract Methods</caption>
+ *  <tr style="border: 1px solid black">
+ *   <th style="border: 1px solid black"> Method
+ *   <th style="border: 1px solid black"> Commentary
+ *  </tr>
+ *  <tr style="border: 1px solid black">
+ *   <td style="border: 1px solid black"> {@code clientConnected}
+ *   <td style="border: 1px solid black"> Called when a new client connects to the server, passing in the client's
+ *                                        socket object so messages can be sent.
+ *  </tr>
+ *  <tr style="border: 1px solid black">
+ *   <td style="border: 1px solid black"> {@code clientCommunicated}
+ *   <td style="border: 1px solid black"> Called when any client sends a message to the server, passing in the bytes
+ *                                        sent and the client's socket object.
+ *  </tr>
+ * </table>
+ * <p>
+ * Some notable threads created by this class include:
+ * <table style="border: 1px solid black">
+ *  <caption>Threads</caption>
+ *  <tr style="border: 1px solid black">
+ *   <th style="border: 1px solid black"> Thread
+ *   <th style="border: 1px solid black"> Commentary
+ *  </tr>
+ *  <tr style="border: 1px solid black">
+ *   <td style="border: 1px solid black"> {@code clientThread}
+ *   <td style="border: 1px solid black"> Created by {@code Server::add}. Runs the {@code Server::listenOnClient}
+ *                                        method for a given client connection, so that the server can continue
+ *                                        accepting new clients in parallel.
+ *  </tr>
+ * </table>
+ *
+ * @see clientConnected
+ * @see clientCommunicated
+ *
+ * @author Jonathan Uhler
+ */
+public abstract class Server {
+
+	/** The default IP address for the server. */
+	public static final String DEFAULT_IP_ADDR = "127.0.0.1";
+	/** The default port for the server. */
+	public static final int DEFAULT_PORT = 9000;
+	/** The maximum number of clients that can be placed in the backlog buffer. */
+	public static final int BACKLOG = 50;
+	
+
+	private Map<ClientSock, Thread> clientConnections;
+	private ServerSock serverSocket;
+	private String ip;
+	private int port;
+
+
+	/**
+	 * Default constructor for a server. This constructor uses the default IP address and port defined as
+	 * instance variables of this class.
+	 */
+	public Server() {
+		this(Server.DEFAULT_IP_ADDR, Server.DEFAULT_PORT);
+	}
+
+
+	/**
+	 * Constructs a {@code Server} object with a given IP address and port.
+	 *
+	 * @param ip the IP address to start the server on.
+	 * @param port the port to start the server on.
+	 */
+	public Server(String ip, int port) {
+		this.ip = ip;
+		this.port = port;
+		
+		this.clientConnections = new HashMap<>();
+		
+		this.serverSocket = new ServerSock();
+		this.serverSocket.bind(this.ip, this.port, Server.BACKLOG);
+
+		// Start the accept method in a new thread. This allows more constructor code to be added is desired
+		Thread acceptThread = new Thread(() -> this.accept());
+		acceptThread.start();
+	}
+
+
+	/**
+	 * Waits for and accepts incoming client connections. This method runs in the main thread of this
+	 * {@code Server} object. Other operations are managed by separate secondary threads. Every time
+	 * a new client connects an informational message is logged.
+	 */
+	private void accept() {
+		// Unconditionally wait for and accept client connections, then assign them an id/place in the array and
+		// create a ClientSock object to represent that conneciton and allow .send() calls towards that client
+		while (true) {
+			Log.stdout(Log.INFO, "Server", "accept :: ready to handle incoming connection");
+			Socket clientConnection = this.serverSocket.accept();
+
+			this.add(clientConnection); // Add the client to the list of connected clients, and start listening
+		}
+	}
+
+
+	/**
+	 * Processes a new client connection. This includes creating a new thread to handle communication with
+	 * that client and putting the client into the {@code clientConnections} map.
+	 *
+	 * @param clientConnection a java {@code Socket} object for the client that connected.
+	 */
+	private void add(Socket clientConnection) {
+		if (clientConnection == null)
+			return;
+
+		ClientSock clientSocket = new ClientSock(clientConnection);
+		clientSocket.connect(this.ip, this.port);
+
+		// Start each client with an individual thread that calls a localized message parsing method in this Server
+		// object. This allows the server to sit each client in a while(true) loop calling recv to get data
+		// from the client until something comes back.
+		Thread clientThread = new Thread(() -> this.listenOnClient(clientSocket));
+
+		// Add the new client to the list of connected clients
+		this.clientConnections.put(clientSocket, clientThread);
+
+		// Allow the child class to take any required actions to intialize this connection
+		this.clientConnected(clientSocket);
+
+		// Start the thread
+		clientThread.start();
+	}
+
+
+	/**
+	 * Performs an arbitrary action when a client first connects. Called by the private {@code Server::add}
+	 * method before the client's thread is started.
+	 *
+	 * @param clientSocket the client that connected.
+	 */
+	public abstract void clientConnected(ClientSock clientSocket);
+
+
+
+	/**
+	 * Listens on a specific client.
+	 *
+	 * @param clientSocket the {@code ClientSock} object to listen to.
+	 */
+	private void listenOnClient(ClientSock clientSocket) {
+		while (true) {
+			Log.stdout(Log.INFO, "Server", "listenOnClient :: ready to process message from " + clientSocket);
+			byte[] recv = this.serverSocket.recv(clientSocket);
+			if (recv == null) {
+				this.clientConnections.remove(clientSocket);
+				return;
+			}
+
+			Log.stdout(Log.INFO, "Server", "Received information from client");
+			Log.stdout(Log.INFO, "Server", "\t" + new String(recv));
+
+			this.clientCommunicated(recv, clientSocket);
+		}
+	}
+
+
+	/**
+	 * Performs an arbitrary action when a client sends a message. Called by the private 
+	 * {@code Server::listenOnClient} method after validating the received message. The argument {@code recv}
+	 * is guaranteed to contain a valid, non-null message
+	 *
+	 * @param recv the message received from the client
+	 * @param clientSocket the client who sent the message
+	 */
+	public abstract void clientCommunicated(byte[] recv, ClientSock clientSocket);
+
+
+	/**
+	 * Sends a message to a client as a byte array.
+	 *
+	 * @param payload a byte array to send.
+	 * @param clientSocket the client to send to.
+	 *
+	 * @see jnet.ServerSock
+	 */
+	public void send(byte[] payload, ClientSock clientSocket) {
+		// The ClientSock objects here allow use of the IN and OUT buffers to read/write messages. It is up to
+		// the actual client on the client-side to call the .recv() method of ClientSock in order to receive the
+		// data sent by the server.
+		if (clientSocket != null)
+			this.serverSocket.send(payload, clientSocket);
+	}
+
+
+	/**
+	 * Sends a message to a client as a string.
+	 *
+	 * @param payload a string to send.
+	 * @param clientSocket the client to send to.
+	 *
+	 * @see jnet.ServerSock
+	 */
+	public void send(String payload, ClientSock clientSocket) {
+		this.send(Bytes.stringToBytes(payload), clientSocket);
+	}
+	
+
+	/**
+	 * Sends a message to all clients as a byte array.
+	 *
+	 * @param payload a byte array to send to all clients.
+	 *
+	 * @see jnet.ServerSock
+	 */
+	public void sendAll(byte[] payload) {
+		// Send a message to all clients based on the ClientSock representations. The ClientSock objects here allow
+		// use of the IN and OUT buffers to read/write messages. It is up to the actual client on the client-side to
+		// call the .recv() method of ClientSock in order to receive the data sent by the server.
+		for (ClientSock clientSocket : this.clientConnections.keySet()) {
+			if (clientSocket != null)
+				this.serverSocket.send(payload, clientSocket);
+		}
+	}
+
+
+	/**
+	 * Sends a message to all clients as a string.
+	 *
+	 * @param payload a string to send to all clients.
+	 *
+	 * @see jnet.ServerSock
+	 */
+	public void sendAll(String payload) {
+		this.sendAll(Bytes.stringToBytes(payload));
+	}
+
+
+	/**
+	 * Removes a connected client. If the argument {@code clientSocket} is null, no action is taken.
+	 * This method also interrupts the thread that was running for the given client.
+	 *
+	 * @param clientSocket the client connection to remove.
+	 */
+	public void remove(ClientSock clientSocket) {
+		if (clientSocket == null)
+			return;
+
+		Thread clientThread = this.clientConnections.get(clientSocket);
+		if (clientThread != null) {
+			clientThread.interrupt();
+			clientSocket.close();
+		}
+	}
+
+}

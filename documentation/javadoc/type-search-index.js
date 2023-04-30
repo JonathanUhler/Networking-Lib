@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"jnet","l":"Bytes"},{"p":"jnet","l":"ClientSock"},{"p":"jnet","l":"CRC"},{"p":"jnet","l":"Header"},{"p":"jnet","l":"Header.Info"},{"p":"jnet","l":"Log"},{"p":"jnet","l":"Server"},{"p":"jnet","l":"ServerSock"}];updateSearchResults();
