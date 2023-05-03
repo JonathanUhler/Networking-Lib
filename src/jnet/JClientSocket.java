@@ -13,7 +13,7 @@ import java.io.IOException;
  *
  * @author Jonathan Uhler
  */
-public class ClientSock {
+public class JClientSocket {
 
 	private Socket clientSocket;
 	private InputStream in;
@@ -21,25 +21,25 @@ public class ClientSock {
 
 
 	/**
-	 * Constructs an uninitialized {@code ClientSock} object. The internal {@code Socket} representation
-	 * will only be initialized upon the call to {@code ClientSock::connect()}.
+	 * Constructs an uninitialized {@code JClientSocket} object. The internal {@code Socket} representation
+	 * will only be initialized upon the call to {@code JClientSocket::connect()}.
 	 *
 	 * @see connect
 	 */
-	public ClientSock() {}
+	public JClientSocket() {}
 
 
 	/**
-	 * Constructs a partially initialized {@code ClientSock} object. The {@code ClientSock::connect()} method
+	 * Constructs a partially initialized {@code JClientSocket} object. The {@code JClientSocket::connect()} method
 	 * must still be called to fully initialize this object, but the optional argument allows for a
 	 * pre-defined connection to be used instead.
 	 *
 	 * @param clientSocket a java {@code Socket} object used to begin the initialization of a 
-	 *        {@code ClientSocket} object.
+	 *        {@code JClientSocketet} object.
 	 *
 	 * @see connect
 	 */
-	public ClientSock(Socket clientSocket) {
+	public JClientSocket(Socket clientSocket) {
 		this.clientSocket = clientSocket;
 	}
 	
@@ -80,9 +80,11 @@ public class ClientSock {
 	 * @param ip an IP address to connect to.
 	 * @param port a port to connect to.
 	 *
+	 * @throws IOException if the java {@code Socket} object cannot be initialized.
+	 *
 	 * @see jnet.Log
 	 */
-	public void connect(String ip, int port) {
+	public void connect(String ip, int port) throws IOException {
 		try {
 			// Because a constructor is provided to take in an existing socket object, a null check is put
 			// here to confirm the socket needs to be created. Otherwise, it is assumed the passed socket
@@ -97,8 +99,9 @@ public class ClientSock {
 			this.out = this.clientSocket.getOutputStream();
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ClientSock", "IOException thrown when initializing socket");
-			Log.stdlog(Log.ERROR, "ClientSock", "\t" + e);
+			Log.stdlog(Log.ERROR, "JClientSocket", "IOException thrown when initializing socket");
+			Log.stdlog(Log.ERROR, "JClientSocket", "\t" + e);
+			throw e;
 		}
 	}
 
@@ -121,7 +124,7 @@ public class ClientSock {
 	 */
 	public int send(byte[] payload) {
 		if (this.out == null) {
-			Log.stdlog(Log.ERROR, "ClientSock", "OUT was null, no message sent");
+			Log.stdlog(Log.ERROR, "JClientSocket", "OUT was null, no message sent");
 			return -1;
 		}
 		
@@ -137,14 +140,14 @@ public class ClientSock {
 			return message.length;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ClientSocket", "cannot send bytes: " + e);
+			Log.stdlog(Log.ERROR, "JClientSocketet", "cannot send bytes: " + e);
 			return -1;
 		}
 	}
 
 
 	/**
-	 * Sends a string across the socket. Identical to {@code ClientSock::send(Bytes.stringToBytes(payload))}.
+	 * Sends a string across the socket. Identical to {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
 	 *
 	 * @param payload a string to send
 	 *
@@ -173,7 +176,7 @@ public class ClientSock {
 	 */
 	public byte[] recv() {
 		if (this.in == null) {
-			Log.stdlog(Log.ERROR, "ClientSock", "IN was null, no message received");
+			Log.stdlog(Log.ERROR, "JClientSocket", "IN was null, no message received");
 			return null;
 		}
 		
@@ -182,7 +185,7 @@ public class ClientSock {
 			byte[] header = new byte[Header.SIZE];
 			int headerSize = this.in.read(header);
 			if (headerSize <= 0) {
-				Log.stdlog(Log.WARN, "ClientSock", "Received no header bytes, server probably closed");
+				Log.stdlog(Log.WARN, "JClientSocket", "Received no header bytes, server probably closed");
 				return null;
 			}
 
@@ -195,7 +198,7 @@ public class ClientSock {
 			byte[] body = new byte[info.size];
 			int bodySize = this.in.read(body);
 			if (bodySize != body.length) {
-				Log.stdlog(Log.ERROR, "ClientSock", "Unable to recv full body. Expected " + body.length +
+				Log.stdlog(Log.ERROR, "JClientSocket", "Unable to recv full body. Expected " + body.length +
 						   " bytes, found " + bodySize + " bytes");
 				return null;
 			}
@@ -205,7 +208,7 @@ public class ClientSock {
 			return payload;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ClientSock", "IOException thrown from IN.readLine(), returning null");
+			Log.stdlog(Log.ERROR, "JClientSocket", "IOException thrown from IN.readLine(), returning null");
 			return null;
 		}
 	}
@@ -213,7 +216,7 @@ public class ClientSock {
 
 	/**
 	 * Receives bytes across the socket and parses them as a string. Identical to 
-	 * {@code Bytes.bytesToString(ClientSock::recv())}. This implies {@code null} may be returned if the bytes
+	 * {@code Bytes.bytesToString(JClientSocket::recv())}. This implies {@code null} may be returned if the bytes
 	 * cannot be parsed as a string for any reason.
 	 *
 	 * @return a string representation of the bytes read.
@@ -238,8 +241,8 @@ public class ClientSock {
 				this.clientSocket.close();
 			}
 			catch (IOException e) {
-				Log.stdlog(Log.ERROR, "ClientSock", "clientSocket could not be closed");
-				Log.stdlog(Log.ERROR, "ClientSock", "\t" + e);
+				Log.stdlog(Log.ERROR, "JClientSocket", "clientSocket could not be closed");
+				Log.stdlog(Log.ERROR, "JClientSocket", "\t" + e);
 			}
 		}
 	}

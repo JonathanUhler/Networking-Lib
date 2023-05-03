@@ -14,27 +14,31 @@ import java.io.IOException;
  *
  * @author Jonathan Uhler
  */
-public class ServerSock {
+public class JServerSocket {
 
 	private ServerSocket serverSocket;
 
 
 	/**
-	 * Binds to a given IP address and port. If the bind fails, an error is logged.
+	 * Binds to a given IP address and port. If the bind fails, an error is logged 
+	 * and the IOException is propagated.
 	 *
 	 * @param ip the IP address to bind to.
 	 * @param port the port to bind to.
 	 * @param backlog the number of pending connections to hold onto in a queue.
 	 *
+	 * @throws IOException if the java {@code ServerSocket} cannot be created.
+	 *
 	 * @see jnet.Log
 	 */
-	public void bind(String ip, int port, int backlog) {
+	public void bind(String ip, int port, int backlog) throws IOException {
 		try {
 			this.serverSocket = new ServerSocket(port, backlog, InetAddress.getByName(ip));
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ServerSock", "IOException thrown when initializing socket");
-			Log.stdlog(Log.ERROR, "ServerSock", "\t" + e);
+			Log.stdlog(Log.ERROR, "JServerSocket", "IOException thrown when initializing socket");
+			Log.stdlog(Log.ERROR, "JServerSocket", "\t" + e);
+			throw e;
 		}
 	}
 
@@ -52,11 +56,11 @@ public class ServerSock {
 				return this.serverSocket.accept();
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ServerSock", "IOException thrown on accept call, returning null");
+			Log.stdlog(Log.ERROR, "JServerSocket", "IOException thrown on accept call, returning null");
 			return null;
 		}
 		
-		Log.stdlog(Log.ERROR, "ServerSock", "no socket returned in accept(), serverSocket might be null");
+		Log.stdlog(Log.ERROR, "JServerSocket", "no socket returned in accept(), serverSocket might be null");
 		return null;
 	}
 
@@ -78,9 +82,9 @@ public class ServerSock {
 	 * @see jnet.CRC
 	 * @see jnet.Header
 	 */
-	public int send(byte[] payload, ClientSock clientConnection) {
+	public int send(byte[] payload, JClientSocket clientConnection) {
 		if (clientConnection == null) {
-			Log.stdlog(Log.ERROR, "ServerSock", "cannot send to null clientConnection");
+			Log.stdlog(Log.ERROR, "JServerSocket", "cannot send to null clientConnection");
 			return -1;
 		}
 
@@ -95,7 +99,7 @@ public class ServerSock {
 			return message.length;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "ServerSock", "cannot send bytes: " + e);
+			Log.stdlog(Log.ERROR, "JServerSocket", "cannot send bytes: " + e);
 			return -1;
 		}
 	}
@@ -116,7 +120,7 @@ public class ServerSock {
 	 *
 	 * @see jnet.Log
 	 */
-	public byte[] recv(ClientSock clientConnection) {
+	public byte[] recv(JClientSocket clientConnection) {
 		try {
 			InputStream in = clientConnection.getInputStream();
 
@@ -124,7 +128,7 @@ public class ServerSock {
 			byte[] header = new byte[Header.SIZE];
 			int headerSize = in.read(header);
 			if (headerSize <= 0) {
-				Log.stdlog(Log.WARN, "ServerSock", "Received no header bytes, client probably disconnected");
+				Log.stdlog(Log.WARN, "JServerSocket", "Received no header bytes, client probably disconnected");
 				return null;
 			}
 
@@ -137,7 +141,7 @@ public class ServerSock {
 			byte[] body = new byte[info.size];
 			int bodySize = in.read(body);
 			if (bodySize != body.length) {
-				Log.stdlog(Log.ERROR, "ServerSock", "Unable to recv full body. Expected " + body.length +
+				Log.stdlog(Log.ERROR, "JServerSocket", "Unable to recv full body. Expected " + body.length +
 						   " bytes, found " + bodySize + " bytes");
 				return null;
 			}
@@ -147,12 +151,12 @@ public class ServerSock {
 			return payload;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.WARN, "ServerSock", "IOException thrown from readLine(), client probably disconnected");
-			Log.stdlog(Log.WARN, "ServerSock", "\t" + e);
+			Log.stdlog(Log.WARN, "JServerSocket", "IOException thrown from readLine(), client probably disconnected");
+			Log.stdlog(Log.WARN, "JServerSocket", "\t" + e);
 			return null;
 		}
 		catch (NullPointerException e) {
-		    Log.stdlog(Log.WARN, "ServerSock", "NullPointException during recv, client dropped the connection");
+		    Log.stdlog(Log.WARN, "JServerSocket", "NullPointException during recv, client dropped the connection");
 			return null;
 		}
 	}

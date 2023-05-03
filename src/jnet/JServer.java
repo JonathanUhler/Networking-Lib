@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.lang.Thread;
 import java.util.Map;
 import java.util.HashMap;
+import java.io.IOException;
 
 
 /**
@@ -51,7 +52,7 @@ import java.util.HashMap;
  *
  * @author Jonathan Uhler
  */
-public abstract class Server {
+public abstract class JServer {
 
 	/** The default IP address for the server. */
 	public static final String DEFAULT_IP_ADDR = "127.0.0.1";
@@ -61,8 +62,8 @@ public abstract class Server {
 	public static final int BACKLOG = 50;
 	
 
-	private Map<ClientSock, Thread> clientConnections;
-	private ServerSock serverSocket;
+	private Map<JClientSocket, Thread> clientConnections;
+	private JServerSocket serverSocket;
 	private String ip;
 	private int port;
 
@@ -70,26 +71,30 @@ public abstract class Server {
 	/**
 	 * Default constructor for a server. This constructor uses the default IP address and port defined as
 	 * instance variables of this class.
+	 *
+	 * @throws IOException if the server cannot be bound to the IP address and port.
 	 */
-	public Server() {
-		this(Server.DEFAULT_IP_ADDR, Server.DEFAULT_PORT);
+	public JServer() throws IOException {
+		this(JServer.DEFAULT_IP_ADDR, JServer.DEFAULT_PORT);
 	}
 
 
 	/**
-	 * Constructs a {@code Server} object with a given IP address and port.
+	 * Constructs a {@code JServer} object with a given IP address and port.
 	 *
 	 * @param ip the IP address to start the server on.
 	 * @param port the port to start the server on.
+	 *
+	 * @throws IOException if the server cannot be bound to the IP address and port.
 	 */
-	public Server(String ip, int port) {
+	public JServer(String ip, int port) throws IOException {
 		this.ip = ip;
 		this.port = port;
 		
 		this.clientConnections = new HashMap<>();
 		
-		this.serverSocket = new ServerSock();
-		this.serverSocket.bind(this.ip, this.port, Server.BACKLOG);
+		this.serverSocket = new JServerSocket();
+		this.serverSocket.bind(this.ip, this.port, JServer.BACKLOG);
 
 		// Start the accept method in a new thread. This allows more constructor code to be added is desired
 		Thread acceptThread = new Thread(() -> this.accept());
@@ -116,16 +121,28 @@ public abstract class Server {
 
 	/**
 	 * Processes a new client connection. This includes creating a new thread to handle communication with
-	 * that client and putting the client into the {@code clientConnections} map.
+	 * that client and putting the client into the {@code clientConnections} map. Because the 
+	 * {@code JClientSocket::connect} method is volatile under normal use, an IOException may be thrown.
+	 * This error is caught by this method, although it should never occur if the server was able to
+	 * bind successfully to the IP address and port given in the constructor. In this unlikely case,
+	 * an error is logged.
 	 *
 	 * @param clientConnection a java {@code Socket} object for the client that connected.
+	 *
+	 * @see jnet.Log
 	 */
 	private void add(Socket clientConnection) {
 		if (clientConnection == null)
 			return;
 
-		ClientSock clientSocket = new ClientSock(clientConnection);
-		clientSocket.connect(this.ip, this.port);
+		JClientSocket clientSocket = new JClientSocket(clientConnection);
+		try {
+			clientSocket.connect(this.ip, this.port);
+		}
+		catch (IOException e) {
+			Log.stdout(Log.ERROR, "Server", "unable to connect clientSocket to server: " + e);
+			return;
+		}
 
 		// Start each client with an individual thread that calls a localized message parsing method in this Server
 		// object. This allows the server to sit each client in a while(true) loop calling recv to get data
@@ -144,31 +161,40 @@ public abstract class Server {
 
 
 	/**
-	 * Performs an arbitrary action when a client first connects. Called by the private {@code Server::add}
+	 * Performs an arbitrary action when a client first connects. Called by the private {@code JServer::add}
 	 * method before the client's thread is started.
 	 *
 	 * @param clientSocket the client that connected.
 	 */
-	public abstract void clientConnected(ClientSock clientSocket);
+	public abstract void clientConnected(JClientSocket clientSocket);
 
+
+	/**
+	 * Performs an arbitrary action when a client disconnects. Called by the private {@code JServer::listenOnClient}
+	 * method before the client is removed from this {@code JServer}'s scope.
+	 *
+	 * @param clientSocket the client that disconnected.
+	 */
+	public abstract void clientDisconnected(JClientSocket clientSocket);
 
 
 	/**
 	 * Listens on a specific client.
 	 *
-	 * @param clientSocket the {@code ClientSock} object to listen to.
+	 * @param clientSocket the {@code JClientSocket} object to listen to.
 	 */
-	private void listenOnClient(ClientSock clientSocket) {
+	private void listenOnClient(JClientSocket clientSocket) {
 		while (true) {
-			Log.stdout(Log.INFO, "Server", "listenOnClient :: ready to process message from " + clientSocket);
+			Log.stdout(Log.INFO, "JServer", "listenOnClient :: ready to process message from " + clientSocket);
 			byte[] recv = this.serverSocket.recv(clientSocket);
 			if (recv == null) {
+				this.clientDisconnected(clientSocket);
 				this.clientConnections.remove(clientSocket);
 				return;
 			}
 
-			Log.stdout(Log.INFO, "Server", "Received information from client");
-			Log.stdout(Log.INFO, "Server", "\t" + new String(recv));
+			Log.stdout(Log.INFO, "JServer", "Received information from client");
+			Log.stdout(Log.INFO, "JServer", "\t" + new String(recv));
 
 			this.clientCommunicated(recv, clientSocket);
 		}
@@ -183,7 +209,7 @@ public abstract class Server {
 	 * @param recv the message received from the client
 	 * @param clientSocket the client who sent the message
 	 */
-	public abstract void clientCommunicated(byte[] recv, ClientSock clientSocket);
+	public abstract void clientCommunicated(byte[] recv, JClientSocket clientSocket);
 
 
 	/**
@@ -192,10 +218,10 @@ public abstract class Server {
 	 * @param payload a byte array to send.
 	 * @param clientSocket the client to send to.
 	 *
-	 * @see jnet.ServerSock
+	 * @see jnet.JServerSocket
 	 */
-	public void send(byte[] payload, ClientSock clientSocket) {
-		// The ClientSock objects here allow use of the IN and OUT buffers to read/write messages. It is up to
+	public void send(byte[] payload, JClientSocket clientSocket) {
+		// The JClientSocket objects here allow use of the IN and OUT buffers to read/write messages. It is up to
 		// the actual client on the client-side to call the .recv() method of ClientSock in order to receive the
 		// data sent by the server.
 		if (clientSocket != null)
@@ -209,9 +235,9 @@ public abstract class Server {
 	 * @param payload a string to send.
 	 * @param clientSocket the client to send to.
 	 *
-	 * @see jnet.ServerSock
+	 * @see jnet.JServerSocket
 	 */
-	public void send(String payload, ClientSock clientSocket) {
+	public void send(String payload, JClientSocket clientSocket) {
 		this.send(Bytes.stringToBytes(payload), clientSocket);
 	}
 	
@@ -221,13 +247,13 @@ public abstract class Server {
 	 *
 	 * @param payload a byte array to send to all clients.
 	 *
-	 * @see jnet.ServerSock
+	 * @see jnet.JServerSocket
 	 */
 	public void sendAll(byte[] payload) {
-		// Send a message to all clients based on the ClientSock representations. The ClientSock objects here allow
+		// Send a message to all clients based on the JClientSocket representations. The ClientSock objects here allow
 		// use of the IN and OUT buffers to read/write messages. It is up to the actual client on the client-side to
 		// call the .recv() method of ClientSock in order to receive the data sent by the server.
-		for (ClientSock clientSocket : this.clientConnections.keySet()) {
+		for (JClientSocket clientSocket : this.clientConnections.keySet()) {
 			if (clientSocket != null)
 				this.serverSocket.send(payload, clientSocket);
 		}
@@ -239,7 +265,7 @@ public abstract class Server {
 	 *
 	 * @param payload a string to send to all clients.
 	 *
-	 * @see jnet.ServerSock
+	 * @see jnet.JServerSocket
 	 */
 	public void sendAll(String payload) {
 		this.sendAll(Bytes.stringToBytes(payload));
@@ -252,7 +278,7 @@ public abstract class Server {
 	 *
 	 * @param clientSocket the client connection to remove.
 	 */
-	public void remove(ClientSock clientSocket) {
+	public void remove(JClientSocket clientSocket) {
 		if (clientSocket == null)
 			return;
 
