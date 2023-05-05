@@ -103,6 +103,26 @@ public abstract class JServer {
 
 
 	/**
+	 * Returns the IP address the server has been binded to.
+	 *
+	 * @return the IP address the server has been binded to.
+	 */
+	public String getIP() {
+		return this.ip;
+	}
+
+
+	/**
+	 * Returns the port this server has been binded to.
+	 *
+	 * @return the port this server has been binded to.
+	 */
+	public int getPort() {
+		return this.port;
+	}
+
+
+	/**
 	 * Waits for and accepts incoming client connections. This method runs in the main thread of this
 	 * {@code Server} object. Other operations are managed by separate secondary threads. Every time
 	 * a new client connects an informational message is logged.
