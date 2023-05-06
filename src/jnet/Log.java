@@ -12,8 +12,8 @@ import javax.swing.JOptionPane;
 
 
 /**
- * Utilities to handle logging and output. All messages logged with {@code Log::stdlog} are written to the
- * file {@code Log.STDLOG_FILE}.
+ * Utilities to handle logging and output. All messages logged with {@code Log::stdlog} are 
+ * written to the file {@code Log.STDLOG_FILE}.
  *
  * @author Jonathan Uhler
  */
@@ -42,8 +42,8 @@ public class Log {
 	/**
 	 * Displays a graphical message.
 	 *
-	 * @param title the window title for the displayed message.
-	 * @param message the message to display.
+	 * @param title    the window title for the displayed message.
+	 * @param message  the message to display.
 	 *
 	 * @see javax.swing.JOptionPane
 	 */
@@ -67,15 +67,15 @@ public class Log {
 	 * <br>
 	 * If the level was out of bounds.
 	 *
-	 * @param level the logging level of the message, which should be an integer in the interval 
-	 *        {@code [0, Log.levelToString.length]}.
-	 * @param location the location where the error occured (e.g. a class or method name).
-	 * @param message the error message.
+	 * @param level     the logging level of the message, which should be an integer in the 
+	 *                  interval {@code [0, Log.levelToString.length]}.
+	 * @param location  the location where the error occured (e.g. a class or method name).
+	 * @param message   the error message.
 	 *
 	 * @return the formatted message.
 	 */
 	public static String format(int level, String location, String message) {
-		// Check if the level is known. If not, replace where the level string would be with "Log.stdout"
+		// Check if the level is known. If not, replace with "Log.stdout"
 		if (level < Log.DEBUG || level > Log.FATAL)
 			return "Log.format (" + location + ")  " + message;
 		else
@@ -86,9 +86,9 @@ public class Log {
 	/**
 	 * Formats and prints information to the standard output.
 	 *
-	 * @param level the verbosity level of the message.
-	 * @param location the location the message originated from.
-	 * @param message the message to print.
+	 * @param level     the verbosity level of the message.
+	 * @param location  the location the message originated from.
+	 * @param message   the message to print.
 	 *
 	 * @see format
 	 */
@@ -98,13 +98,14 @@ public class Log {
 
 
 	/**
-	 * Formats and writes information to the standard log file. The formatted message will also be printed
-	 * by default if the logging level is greater than {@code Log.INFO}. This behavior can be overridden by
-	 * calling {@code Log.stdlog(int, String, String, boolean)} with {@code false} for the last argument.
+	 * Formats and writes information to the standard log file. The formatted message will also be 
+	 * printed by default if the logging level is greater than {@code Log.INFO}. This behavior can 
+	 * be overridden by calling {@code Log.stdlog(int, String, String, boolean)} with {@code false}
+	 * for the last argument.
 	 *
-	 * @param level the verbosity level of the message.
-	 * @param location the location the message originated from.
-	 * @param message the message to print.
+	 * @param level     the verbosity level of the message.
+	 * @param location  the location the message originated from.
+	 * @param message   the message to print.
 	 *
 	 * @see stdlog(int, String, String, boolean)
 	 * @see format
@@ -118,10 +119,10 @@ public class Log {
 	/**
 	 * Formats and writes information to the standard log file.
 	 *
-	 * @param level the verbosity level of the message.
-	 * @param location the location the message originated from.
-	 * @param message the message to print.
-	 * @param print whether to also print the formatted message to the standard output.
+	 * @param level     the verbosity level of the message.
+	 * @param location  the location the message originated from.
+	 * @param message   the message to print.
+	 * @param print     whether to also print the formatted message to the standard output.
 	 *
 	 * @see stdlog(int, String, String)
 	 * @see format
@@ -146,8 +147,8 @@ public class Log {
 			Log.stdout(level, location, "(STDLOG_FILE was null) " + message);
 		}
 
-		// If the message was a fatal error, assume there is no way to recover and close to program to
-		// prevent further errors or damage
+		// If the message was a fatal error, assume there is no way to recover and close to
+		// program to prevent further errors or damage
 		if (level == Log.FATAL)
 			System.exit(Log.FATAL);
 	}

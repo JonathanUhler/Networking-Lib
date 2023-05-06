@@ -23,11 +23,11 @@ public class JServerSocket {
 	 * Binds to a given IP address and port. If the bind fails, an error is logged 
 	 * and the IOException is propagated.
 	 *
-	 * @param ip the IP address to bind to.
-	 * @param port the port to bind to.
-	 * @param backlog the number of pending connections to hold onto in a queue.
+	 * @param ip       the IP address to bind to.
+	 * @param port     the port to bind to.
+	 * @param backlog  the number of pending connections to hold onto in a queue.
 	 *
-	 * @throws IOException if the java {@code ServerSocket} cannot be created.
+	 * @throws IOException  if the java {@code ServerSocket} cannot be created.
 	 *
 	 * @see jnet.Log
 	 */
@@ -44,7 +44,8 @@ public class JServerSocket {
 
 
 	/**
-	 * Waits for and accepts an incoming client connection. If an error occurs, a message will be logged.
+	 * Waits for and accepts an incoming client connection. If an error occurs, a message will 
+	 * be logged.
 	 *
 	 * @return a {@code Socket} object of the connecting client.
 	 *
@@ -56,27 +57,30 @@ public class JServerSocket {
 				return this.serverSocket.accept();
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "JServerSocket", "IOException thrown on accept call, returning null");
+			Log.stdlog(Log.ERROR, "JServerSocket",
+					   "IOException thrown on accept call, returning null");
 			return null;
 		}
 		
-		Log.stdlog(Log.ERROR, "JServerSocket", "no socket returned in accept(), serverSocket might be null");
+		Log.stdlog(Log.ERROR, "JServerSocket",
+				   "no socket returned in accept(), serverSocket might be null");
 		return null;
 	}
 
 
 	/**
-	 * Sends a message across the socket to a specific client. This method handles the use of a CRC and
-	 * header automatically. The argument {@code payload} should not contain these elements. If they are
-	 * present they will be ignored and treated as part of the payload. The argument byte array must also 
-	 * contain at least 1 byte, and abide by any other preconditions demanded by the CRC and Header routines. 
-	 * Upon any server-side error, a message will be logged and {@code -1} will be returned.
+	 * Sends a message across the socket to a specific client. This method handles the use of a 
+	 * CRC and header automatically. The argument {@code payload} should not contain these 
+	 * elements. If they are present they will be ignored and treated as part of the payload. The 
+	 * argument byte array must also contain at least 1 byte, and abide by any other preconditions 
+	 * demanded by the CRC and Header routines. Upon any server-side error, a message will be 
+	 * logged and {@code -1} will be returned.
 	 *
-	 * @param payload a byte array to send.
-	 * @param clientConnection the client to send to.
+	 * @param payload           a byte array to send.
+	 * @param clientConnection  the client to send to.
 	 *
-	 * @return the number of bytes sent, including the length of the attached crc, header, and possible pad
-	 *         bytes.
+	 * @return the number of bytes sent, including the length of the attached crc, header, and 
+	 *         possible pad bytes.
 	 *
 	 * @see jnet.Log
 	 * @see jnet.CRC
@@ -106,15 +110,15 @@ public class JServerSocket {
 
 
 	/**
-	 * Receives bytes across the socket. If the read could not be performed or either the header or crc check
-	 * fails, {@code null} is returned and an error is logged. This method validates and detaches the
-	 * crc and header bytes if valid.
+	 * Receives bytes across the socket. If the read could not be performed or either the header 
+	 * or crc check fails, {@code null} is returned and an error is logged. This method validates 
+	 * and detaches the crc and header bytes if valid.
 	 * <p>
-	 * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} object.
-	 * If the header CRC check passes, {@code Header.Info::size} bytes are read. If the CRC check
-	 * passes for this body, the payload is returned.
+	 * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} 
+	 * object. If the header CRC check passes, {@code Header.Info::size} bytes are read. If the 
+	 * CRC check passes for this body, the payload is returned.
 	 *
-	 * @param clientConnection the client to receive from
+	 * @param clientConnection  the client to receive from
 	 *
 	 * @return the latest message in the client's buffer.
 	 *
@@ -128,7 +132,8 @@ public class JServerSocket {
 			byte[] header = new byte[Header.SIZE];
 			int headerSize = in.read(header);
 			if (headerSize <= 0) {
-				Log.stdlog(Log.WARN, "JServerSocket", "Received no header bytes, client probably disconnected");
+				Log.stdlog(Log.WARN, "JServerSocket",
+						   "Received no header bytes, client probably disconnected");
 				return null;
 			}
 
@@ -141,7 +146,8 @@ public class JServerSocket {
 			byte[] body = new byte[info.size];
 			int bodySize = in.read(body);
 			if (bodySize != body.length) {
-				Log.stdlog(Log.ERROR, "JServerSocket", "Unable to recv full body. Expected " + body.length +
+				Log.stdlog(Log.ERROR, "JServerSocket",
+						   "Unable to recv full body. Expected " + body.length +
 						   " bytes, found " + bodySize + " bytes");
 				return null;
 			}
@@ -151,12 +157,14 @@ public class JServerSocket {
 			return payload;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.WARN, "JServerSocket", "IOException thrown from readLine(), client probably disconnected");
+			Log.stdlog(Log.WARN, "JServerSocket",
+					   "IOException thrown from readLine(), client probably disconnected");
 			Log.stdlog(Log.WARN, "JServerSocket", "\t" + e);
 			return null;
 		}
 		catch (NullPointerException e) {
-		    Log.stdlog(Log.WARN, "JServerSocket", "NullPointException during recv, client dropped the connection");
+		    Log.stdlog(Log.WARN, "JServerSocket",
+					   "NullPointException during recv, client dropped the connection");
 			return null;
 		}
 	}

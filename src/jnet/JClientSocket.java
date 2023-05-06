@@ -21,8 +21,8 @@ public class JClientSocket {
 
 
 	/**
-	 * Constructs an uninitialized {@code JClientSocket} object. The internal {@code Socket} representation
-	 * will only be initialized upon the call to {@code JClientSocket::connect()}.
+	 * Constructs an uninitialized {@code JClientSocket} object. The internal {@code Socket} 
+	 * representation will only be initialized upon the call to {@code JClientSocket::connect()}.
 	 *
 	 * @see connect
 	 */
@@ -30,12 +30,12 @@ public class JClientSocket {
 
 
 	/**
-	 * Constructs a partially initialized {@code JClientSocket} object. The {@code JClientSocket::connect()} method
-	 * must still be called to fully initialize this object, but the optional argument allows for a
-	 * pre-defined connection to be used instead.
+	 * Constructs a partially initialized {@code JClientSocket} object. The 
+	 * {@code JClientSocket::connect()} method must still be called to fully initialize this 
+	 * object, but the optional argument allows for a pre-defined connection to be used instead.
 	 *
-	 * @param clientSocket a java {@code Socket} object used to begin the initialization of a 
-	 *        {@code JClientSocketet} object.
+	 * @param clientSocket  a java {@code Socket} object used to begin the initialization of a 
+	 *                      {@code JClientSocketet} object.
 	 *
 	 * @see connect
 	 */
@@ -45,10 +45,10 @@ public class JClientSocket {
 	
 
 	/**
-	 * Returns the InputStream object from the locally stored java Socket object. This is provided so
-	 * servers can "listen" and "send" on the client socket. This function, unlike the C methods, is done
-	 * in java through the I/O streams, which needs to be taken from the client socket for the listen/send
-	 * calls.
+	 * Returns the InputStream object from the locally stored java Socket object. This is provided 
+	 * so servers can "listen" and "send" on the client socket. This function, unlike the C 
+	 * methods, is done in java through the I/O streams, which needs to be taken from the client 
+	 * socket for the listen/send calls.
 	 *
 	 * @return an {@code InputStream} object connected to the internal {@code Socket} object.
 	 */
@@ -74,27 +74,28 @@ public class JClientSocket {
 
 
 	/**
-	 * Connects this socket to a destination address. Performs the action of the C socket {@code connect()}
-	 * by wrapping the creation of the java I/O streams. If the connection fails, an error is logged.
+	 * Connects this socket to a destination address. Performs the action of the C socket 
+	 * {@code connect()} by wrapping the creation of the java I/O streams. If the connection fails,
+	 * an error is logged.
 	 *
-	 * @param ip an IP address to connect to.
-	 * @param port a port to connect to.
+	 * @param ip    an IP address to connect to.
+	 * @param port  a port to connect to.
 	 *
-	 * @throws IOException if the java {@code Socket} object cannot be initialized.
+	 * @throws IOException  if the java {@code Socket} object cannot be initialized.
 	 *
 	 * @see jnet.Log
 	 */
 	public void connect(String ip, int port) throws IOException {
 		try {
-			// Because a constructor is provided to take in an existing socket object, a null check is put
-			// here to confirm the socket needs to be created. Otherwise, it is assumed the passed socket
-			// contains the correct IP/port. Although, this method is not actually called in the case
-			// where the second constructor is used
+			// Because a constructor is provided to take in an existing socket object, a null
+			// check is put here to confirm the socket needs to be created. Otherwise, it is
+			// assumed the passed socket contains the correct IP/port. Although, this method is
+			// not actually called in the case where the second constructor is used
 			if (this.clientSocket == null)
 				this.clientSocket = new Socket(ip, port);
 
-			// This is java's way of handling socket I/O. The main purpose of this method is to wrap
-			// the creation of these stream objects to make for a cleaner implementation
+			// This is java's way of handling socket I/O. The main purpose of this method is to
+			// wrap the creation of these stream objects to make for a cleaner implementation
 			this.in = this.clientSocket.getInputStream();
 			this.out = this.clientSocket.getOutputStream();
 		}
@@ -108,15 +109,15 @@ public class JClientSocket {
 
 	/**
 	 * Sends a payload across the socket. This method integrates CRC and header options on its own.
-	 * These elements should not be added by the caller (if they are, they will be ignored and treated
-	 * as part of the message payload). The payload must contain at least 1 byte. If an error occurs
-	 * with the CRC generation, header generation, payload structure, or send operation, a
-	 * corresponding error will be logged and -1 returned.
+	 * These elements should not be added by the caller (if they are, they will be ignored and 
+	 * treated as part of the message payload). The payload must contain at least 1 byte. If an 
+	 * error occurs with the CRC generation, header generation, payload structure, or send 
+	 * operation, a corresponding error will be logged and -1 returned.
 	 *
-	 * @param payload a byte array to send.
+	 * @param payload  a byte array to send.
 	 *
-	 * @return the number of bytes sent, including the length of the attached crc, header, and possible pad
-	 *         bytes.
+	 * @return the number of bytes sent, including the length of the attached crc, header, 
+	 *         and possible pad bytes.
 	 *
 	 * @see jnet.Log
 	 * @see jnet.CRC
@@ -147,12 +148,13 @@ public class JClientSocket {
 
 
 	/**
-	 * Sends a string across the socket. Identical to {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
+	 * Sends a string across the socket. Identical to 
+	 * {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
 	 *
-	 * @param payload a string to send
+	 * @param payload  a string to send
 	 *
-	 * @return the number of bytes sent, including the length of the attached crc, header, and possible pad
-	 *         bytes.
+	 * @return the number of bytes sent, including the length of the attached crc, header, 
+	 *         and possible pad bytes.
 	 *
 	 * @see send(byte[])
 	 */
@@ -162,13 +164,13 @@ public class JClientSocket {
 
 
 	/**
-	 * Receives bytes across the socket. If the read could not be performed or either the header or crc check
-	 * fails, {@code null} is returned an an error is logged. This method validates and detaches the
-	 * crc and header bytes if valid.
+	 * Receives bytes across the socket. If the read could not be performed or either the header 
+	 * or crc check fails, {@code null} is returned an an error is logged. This method validates 
+	 * and detaches the crc and header bytes if valid.
 	 * <p>
-	 * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} object.
-	 * If the header CRC check passes, {@code Header.Info::size} bytes are read. If the CRC check
-	 * passes for this body, the payload is returned.
+	 * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} 
+	 * object. If the header CRC check passes, {@code Header.Info::size} bytes are read. If the 
+	 * CRC check passes for this body, the payload is returned.
 	 *
 	 * @return the received bytes.
 	 *
@@ -185,7 +187,8 @@ public class JClientSocket {
 			byte[] header = new byte[Header.SIZE];
 			int headerSize = this.in.read(header);
 			if (headerSize <= 0) {
-				Log.stdlog(Log.WARN, "JClientSocket", "Received no header bytes, server probably closed");
+				Log.stdlog(Log.WARN, "JClientSocket",
+						   "Received no header bytes, server probably closed");
 				return null;
 			}
 
@@ -198,8 +201,8 @@ public class JClientSocket {
 			byte[] body = new byte[info.size];
 			int bodySize = this.in.read(body);
 			if (bodySize != body.length) {
-				Log.stdlog(Log.ERROR, "JClientSocket", "Unable to recv full body. Expected " + body.length +
-						   " bytes, found " + bodySize + " bytes");
+				Log.stdlog(Log.ERROR, "JClientSocket", "Unable to recv full body. Expected " +
+						   body.length + " bytes, found " + bodySize + " bytes");
 				return null;
 			}
 
@@ -208,7 +211,8 @@ public class JClientSocket {
 			return payload;
 		}
 		catch (IOException e) {
-			Log.stdlog(Log.ERROR, "JClientSocket", "IOException thrown from IN.readLine(), returning null");
+			Log.stdlog(Log.ERROR, "JClientSocket",
+					   "IOException thrown from IN.readLine(), returning null");
 			return null;
 		}
 	}
@@ -216,8 +220,8 @@ public class JClientSocket {
 
 	/**
 	 * Receives bytes across the socket and parses them as a string. Identical to 
-	 * {@code Bytes.bytesToString(JClientSocket::recv())}. This implies {@code null} may be returned if the bytes
-	 * cannot be parsed as a string for any reason.
+	 * {@code Bytes.bytesToString(JClientSocket::recv())}. This implies {@code null} may be 
+	 * returned if the bytes cannot be parsed as a string for any reason.
 	 *
 	 * @return a string representation of the bytes read.
 	 *

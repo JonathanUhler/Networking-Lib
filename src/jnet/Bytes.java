@@ -25,10 +25,10 @@ public class Bytes {
 
 
 	/**
-	 * Converts an integer to a byte array. This operation will always produce a byte array {@code b} such that 
-	 * {@code b != null && b.length == 4}.
+	 * Converts an integer to a byte array. This operation will always produce a byte array 
+	 * {@code b} such that {@code b != null && b.length == 4}.
 	 *
-	 * @param n the integer to convert.
+	 * @param n  the integer to convert.
 	 *
 	 * @return a byte array representation of {@code n}.
 	 */
@@ -41,21 +41,22 @@ public class Bytes {
 
 
 	/**
-	 * Converts a byte array to an integer. The passed array must not be null and must contain exactly 4 bytes. 
-	 * If the argument array is invalid, {@code Integer.MIN_VALUE} is returned
+	 * Converts a byte array to an integer. The passed array must not be null and must contain 
+	 * exactly 4 bytes. If the argument array is invalid, {@code Integer.MIN_VALUE} is returned.
 	 *
-	 * @param b the byte array to convert
+	 * @param b  the byte array to convert.
 	 *
-	 * @return the integer representation of {@code b}
+	 * @return the integer representation of {@code b}.
 	 *
-	 * @throws NullPointerException if {@code b} is null
-	 * @throws IllegalArgumentException if {@code b.length != Integer.SIZE / Byte.SIZE == 4}
+	 * @throws NullPointerException      if {@code b} is null.
+	 * @throws IllegalArgumentException  if {@code b.length != Integer.SIZE / Byte.SIZE == 4}.
 	 */
 	public static int bytesToInt(byte[] b) {
 		if (b == null)
 			throw new NullPointerException("b cannot be null");
 		if (b.length != Integer.SIZE / Byte.SIZE)
-			throw new IllegalArgumentException("invalid length for b: expected 4, found " + b.length);
+			throw new IllegalArgumentException("invalid length for b: expected 4, found " +
+											   b.length);
 		
 	    ByteBuffer buf = ByteBuffer.wrap(b);
 		buf.order(Bytes.ORDER);
@@ -64,11 +65,12 @@ public class Bytes {
 
 
 	/**
-	 * Serializes an arbitrary object into a byte array. If the passed {@code object == null} or an 
-	 * {@code IOException} is thrown during serialization (e.g. the object is not {@code Serializable}),
-	 * then {@code null} is returned and an error is logged using {@code jnet.Log}.
+	 * Serializes an arbitrary object into a byte array. If the passed {@code object == null} or 
+	 * an  {@code IOException} is thrown during serialization (e.g. the object is not 
+	 * {@code Serializable}), then {@code null} is returned and an error is logged using 
+	 * {@code jnet.Log}.
 	 *
-	 * @param object the object to serialize.
+	 * @param object  the object to serialize.
 	 *
 	 * @return a byte array representation of {@code object}
 	 *
@@ -85,7 +87,8 @@ public class Bytes {
 			oos.flush();
 		}
 		catch (IOException e) {
-			Log.stdout(Log.ERROR, "Log", "Cannot serialize object of type: " + object.getClass() + ": " + e);
+			Log.stdout(Log.ERROR, "Log", "Cannot serialize object of type: " +
+					   object.getClass() + ": " + e);
 			return null;
 		}
 
@@ -94,13 +97,14 @@ public class Bytes {
 
 
 	/**
-	 * Deserializes an arbitrary byte array into an object. If the passed {@code byte[] == null} or an 
-	 * {@code Exception} is thrown during deserialization, then {@code null} is returned and an error is 
-	 * logged using {@code jnet.Log}.
+	 * Deserializes an arbitrary byte array into an object. If the passed {@code byte[] == null} 
+	 * or an {@code Exception} is thrown during deserialization, then {@code null} is returned and 
+	 * an error is logged using {@code jnet.Log}.
 	 *
-	 * @param bytes the byte array to deserialize.
+	 * @param bytes  the byte array to deserialize.
 	 *
-	 * @return the deserialized object (it is the responsibility of the caller to cast as appropriate)
+	 * @return the deserialized object (it is the responsibility of the caller to cast as 
+	 *         appropriate).
 	 *
 	 * @see jnet.Log
 	 */
@@ -124,7 +128,7 @@ public class Bytes {
 	 * Converts a string to a byte array. This method is a wrapper for {@code str.getBytes()}. If 
 	 * {@code str == null}, {@code null} will be returned without an error being logged or thrown.
 	 *
-	 * @param str the string to convert.
+	 * @param str  the string to convert.
 	 *
 	 * @return a {@code byte[]} representation of {@code str}.
 	 */
@@ -136,10 +140,11 @@ public class Bytes {
 
 
 	/**
-	 * Converts a byte array to a string. This method is a wrapper for {@code new String(bytes)}. If 
-	 * {@code bytes == null}, {@code null} will be returned without an error being logged or thrown.
+	 * Converts a byte array to a string. This method is a wrapper for {@code new String(bytes)}. 
+	 * If {@code bytes == null}, {@code null} will be returned without an error being logged or 
+	 * thrown.
 	 *
-	 * @param bytes the byte array to convert.
+	 * @param bytes  the byte array to convert.
 	 *
 	 * @return a {@code String} representation of {@code bytes}.
 	 */

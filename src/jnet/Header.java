@@ -2,22 +2,26 @@ package jnet;
 
 
 /**
- * Utilities to handle header generation, application, and verification for socket buffer safety. The
- * inclusion of fixed-size headers with CRC redundancy allows a specific payload length to be read,
- * assuming the integrity of the header. Upon header corruption, other tactics (e.g. sequence
- * numbers and resends) can be used to verify data transmission.
+ * Utilities to handle header generation, application, and verification for socket buffer safety. 
+ * The inclusion of fixed-size headers with CRC redundancy allows a specific payload length to be 
+ * read, assuming the integrity of the header. Upon header corruption, other tactics (e.g. 
+ * sequence numbers and resends) can be used to verify data transmission.
  * <p>
- * Throughout the methods within this class, the following notation is used to refer to data contained in byte arrays:
+ * Throughout the methods within this class, the following notation is used to refer to data 
+ * contained in byte arrays:
  * <ul>
  * <li> {@code header} - a header to allow for safe data I/O. See jnet.Header.
- * <li> {@code payload} - a byte array containing the data being sent or received through the socket. This is
- *                        what is ultimately expected by the programmer and is the only component of the message
- *                        returned by the send/recv methods of the socket-oriented classes in this library.
- * <li> {@code crc} - a 4-byte checksum of {@code payload}. The argument to the method {@code CRC::crc32()} is 
- *                    referred to as {@code bytes} to provide a more generic name, but this method is almost
- *                    exclusively used to generate a checksum for {@code payload}.
+ * <li> {@code payload} - a byte array containing the data being sent or received through the 
+ *                        socket. This is what is ultimately expected by the programmer and is the 
+ *                        only component of the message returned by the send/recv methods of the 
+ *                        socket-oriented classes in this library.
+ * <li> {@code crc} - a 4-byte checksum of {@code payload}. The argument to the method 
+ *                    {@code CRC::crc32()} is referred to as {@code bytes} to provide a more 
+ *                    generic name, but this method is almost exclusively used to generate a 
+ *                    checksum for {@code payload}.
  * <li> {@code body} - a byte array containing {@code payload + crc} in that order.
- * <li> {@code message} - the full message sent across the socket, comprised of {@code header + body} in that order.
+ * <li> {@code message} - the full message sent across the socket, comprised of 
+ *                        {@code header + body} in that order.
  * </ul>
  * <p>
  * The header managed by this class is defined as a byte array containing the following (see 
@@ -42,12 +46,14 @@ package jnet;
  *  </tr>
  *  <tr style="border: 1px solid black">
  *   <td style="border: 1px solid black"> b[7, 4]
- *   <td style="border: 1px solid black"> Body length. Defined as {@code (payload + crc).length == body.length}.
+ *   <td style="border: 1px solid black"> Body length. Defined as 
+ *                                        {@code (payload + crc).length == body.length}.
  *  </tr>
  *  <tr style="border: 1px solid black">
  *   <td style="border: 1px solid black"> b[11, 8]
- *   <td style="border: 1px solid black"> Header CRC. This is a checksum only for {@code b[0, 7]} in the header. 
- *                                        The body is assumed to contain its own checksum if needed.
+ *   <td style="border: 1px solid black"> Header CRC. This is a checksum only for {@code b[0, 7]} 
+ *                                        in the header. The body is assumed to contain its own 
+ *                                        checksum if needed.
  *  </tr>
  * </table>
  *
@@ -75,10 +81,11 @@ public class Header {
 
 
 	/**
-	 * Generates a header for a given body. The CRC bytes attached to {@code body} WILL be validated by
-	 * this method. If the CRC is found to be invalid, {@code null} is returned and an error is logged.
+	 * Generates a header for a given body. The CRC bytes attached to {@code body} WILL be 
+	 * validated by this method. If the CRC is found to be invalid, {@code null} is returned and 
+	 * an error is logged.
 	 *
-	 * @param body a payload and crc to generate a header for
+	 * @param body  a payload and crc to generate a header for
 	 *
 	 * @return a byte array containing the header for {@code body}.
 	 *
@@ -88,7 +95,8 @@ public class Header {
 		// Validate the body, this also confirms non-null
 		boolean hasValidCRC = CRC.check(body);
 		if (!hasValidCRC) {
-			Log.stdlog(Log.ERROR, "Header", "body must have a valid CRC before the header is generated");
+			Log.stdlog(Log.ERROR, "Header",
+					   "body must have a valid CRC before the header is generated");
 			return null;
 		}
 
@@ -99,18 +107,20 @@ public class Header {
 		// Create and return the header
 		byte[] header = new byte[Header.SIZE - CRC.NUM_BYTES];
 		header[0] = Header.HEADER_BYTE;
-		System.arraycopy(lengthBytes, 0, header, Header.BODY_LENGTH_OFFSET, Header.BODY_LENGTH_SIZE);
+		System.arraycopy(lengthBytes, 0, header,
+						 Header.BODY_LENGTH_OFFSET, Header.BODY_LENGTH_SIZE);
 		header = CRC.attach(header);
 		return header;
 	}
 
 
 	/**
-	 * Creates and attaches a header to the argument {@code body}. A new byte array is returned containing
-	 * {@code header + body} in that order. The contents of {@code body} are not modified. This method will
-	 * validate the crc of the payload and return {@code null} if the crc is invalid.
+	 * Creates and attaches a header to the argument {@code body}. A new byte array is returned 
+	 * containing {@code header + body} in that order. The contents of {@code body} are not 
+	 * modified. This method will validate the crc of the payload and return {@code null} if the 
+	 * crc is invalid.
 	 *
-	 * @param body the message body (which must contain a crc) to generate and attach a header to
+	 * @param body  the message body (which must contain a crc) to generate and attach a header to
 	 *
 	 * @return a new array containing {@code header + body} in that order.
 	 */
@@ -129,12 +139,13 @@ public class Header {
 
 
 	/**
-	 * Validates and parses the content of a given header as a {@code Header.Info} object. "Validation"
-	 * includes a check of the header crc. Upon any validation error {@code null} is returned and
-	 * an error is logged. If the validation succeeds ({@code Header::validateAndParse() != null}), the
-	 * data in the struct is guaranteed to be valid.
+	 * Validates and parses the content of a given header as a {@code Header.Info} object. 
+	 * "Validation" includes a check of the header crc. Upon any validation error {@code null} is 
+	 * returned and an error is logged. If the validation succeeds 
+	 * ({@code Header::validateAndParse() != null}), the data in the struct is guaranteed to be 
+	 * valid.
 	 *
-	 * @param header the header to validate.
+	 * @param header  the header to validate.
 	 *
 	 * @return a {@code Header.Info} struct containing all the information of the header in more
 	 *         accessible public instance variables.
@@ -156,8 +167,8 @@ public class Header {
 
 
 	/**
-	 * Wrapper structure for the byte-array representation of a header. The constructor of this class
-	 * automatically validates the header byte-array for correctness.
+	 * Wrapper structure for the byte-array representation of a header. The constructor of this 
+	 * class automatically validates the header byte-array for correctness.
 	 *
 	 * @author Jonathan Uhler
 	 */
@@ -172,18 +183,19 @@ public class Header {
 
 
 		/**
-		 * Constructs a {@code Header.Info} object from a header byte array. This constructor validates
-		 * the information contained within the argument {@code header}. If the data can be validated
-		 * the instance variables of this class are set appropriately. Upon error an exception is
-		 * thrown.
+		 * Constructs a {@code Header.Info} object from a header byte array. This constructor 
+		 * validates the information contained within the argument {@code header}. If the data can 
+		 * be validated the instance variables of this class are set appropriately. Upon error an 
+		 * exception is thrown.
 		 *
-		 * @param header the header to validate and parse.
+		 * @param header  the header to validate and parse.
 		 *
-		 * @throws IllegalArgumentException if header validation fails for any reason.
+		 * @throws IllegalArgumentException  if header validation fails for any reason.
 		 */
 		public Info(byte[] header) {
 			if (header == null || header.length != Header.SIZE)
-				throw new IllegalArgumentException("invalid header length, expected " + Header.SIZE + ", found " +
+				throw new IllegalArgumentException("invalid header length, expected " +
+												   Header.SIZE + ", found " +
 												   (header == null ? "null" : header.length));
 
 			if (!CRC.check(header))
