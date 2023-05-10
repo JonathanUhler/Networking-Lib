@@ -168,5 +168,23 @@ public class JServerSocket {
 			return null;
 		}
 	}
+
+
+	/**
+	 * Closes the socket connection. If the connection cannot be closed, an error is logged.
+	 *
+	 * @see jnet.Log
+	 */
+	public void close() {
+		if (this.serverSocket != null) {
+			try {
+				this.serverSocket.close();
+			}
+			catch (IOException e) {
+				Log.stdlog(Log.ERROR, "JServerSocket", "serverSocket could not be closed");
+				Log.stdlog(Log.ERROR, "JServerSocket", "\t" + e);
+			}
+		}
+	}
 	
 }

@@ -313,7 +313,22 @@ public abstract class JServer {
 		if (clientThread != null) {
 			clientThread.interrupt();
 			clientSocket.close();
+			this.clientConnections.remove(clientSocket);
 		}
+	}
+
+
+	/**
+	 * Unbinds this server server from its port. Before the server is closed, any clients
+	 * connected are disconnected with the {@code remove} method of this server.
+	 *
+	 * @see remove
+	 */
+	public void close() {
+		for (JClientSocket clientSocket : this.clientConnections.keySet())
+			this.remove(clientSocket);
+
+		this.serverSocket.close();
 	}
 
 }
