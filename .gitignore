@@ -1,4 +1,13 @@
-obj/*
-deprecated/*
+# IDE files
 .DS_Store
+.vscode
+.idea
 *~
+
+# Compiled/artifact files
+obj
+__pycache__
+
+# Deprecated and auto-generated files
+deprecated
+docs/javadoc
