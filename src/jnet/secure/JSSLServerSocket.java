@@ -1,8 +1,12 @@
-package jnet;
+package jnet.secure;
 
 
-import java.net.Socket;
-import java.net.ServerSocket;
+import jnet.CRC;
+import jnet.Header;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.net.InetAddress;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,26 +14,40 @@ import java.io.IOException;
 
 
 /**
- * C-style socket wrapper for servers.
+ * C-style socket wrapper for servers with SSL security support.
  *
  * @author Jonathan Uhler
  */
-public class JServerSocket {
+public class JSSLServerSocket {
     
-    private ServerSocket serverSocket;
+    private SSLServerSocket serverSocket;
     
     
     /**
-     * Binds to a given IP address and port.
+     * Binds to a given IP address and port. This method performs a secure bind using the
+     * specified security protocols and cipher suites.
      *
-     * @param ip       the IP address to bind to.
-     * @param port     the port to bind to.
-     * @param backlog  the number of pending connections to hold onto in a queue.
+     * @param ip            the IP address to bind to.
+     * @param port          the port to bind to.
+     * @param backlog       the number of pending connections to hold onto in a queue.
+     * @param protocols     a list of security protocol names to use.
+     * @param cipherSuites  a list of cipher names to use.
      *
      * @throws IOException  if the java {@code ServerSocket} cannot be created.
+     *
+     * @see jnet.secure.JSSLServer
      */
-    public void bind(String ip, int port, int backlog) throws IOException {
-        this.serverSocket = new ServerSocket(port, backlog, InetAddress.getByName(ip));
+    public void bind(String ip,
+                     int port,
+                     int backlog,
+                     String[] protocols,
+                     String[] cipherSuites) throws IOException
+    {
+        this.serverSocket = (SSLServerSocket) SSLServerSocketFactory
+            .getDefault()
+            .createServerSocket(port, backlog, InetAddress.getByName(ip));
+        this.serverSocket.setEnabledProtocols(protocols);
+        this.serverSocket.setEnabledCipherSuites(cipherSuites);
     }
     
     
@@ -37,12 +55,12 @@ public class JServerSocket {
      * Waits for and accepts an incoming client connection. If an error occurs, {@code null}
      * is returned.
      *
-     * @return a {@code Socket} object of the connecting client.
+     * @return a {@code SSLSocket} object of the connecting client.
      */
-    public Socket accept() {
+    public SSLSocket accept() {
         try {
             if (this.serverSocket != null)
-                return this.serverSocket.accept();
+                return (SSLSocket) this.serverSocket.accept();
         }
         catch (IOException e) {
             return null;
@@ -69,7 +87,7 @@ public class JServerSocket {
      * @see jnet.CRC
      * @see jnet.Header
      */
-    public int send(byte[] payload, JClientSocket clientConnection) {
+    public int send(byte[] payload, JSSLClientSocket clientConnection) {
         if (clientConnection == null)
             return -1;
         
@@ -102,7 +120,7 @@ public class JServerSocket {
      *
      * @return the latest message in the client's buffer.
      */
-    public byte[] recv(JClientSocket clientConnection) {
+    public byte[] recv(JSSLClientSocket clientConnection) {
         try {
             InputStream in = clientConnection.getInputStream();
             
