@@ -11,3 +11,4 @@ __pycache__
 # Deprecated and auto-generated files
 deprecated
 docs/javadoc
+docs/pydoc
