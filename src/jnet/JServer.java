@@ -152,8 +152,9 @@ public abstract class JServer {
      * @param clientConnection  a java {@code Socket} object for the client that connected.
      */
     private void add(Socket clientConnection) {
-        if (clientConnection == null)
+        if (clientConnection == null) {
             return;
+        }
         
         JClientSocket clientSocket = new JClientSocket(clientConnection);
         try {
@@ -240,8 +241,9 @@ public abstract class JServer {
         // The JClientSocket objects here allow use of the IN and OUT buffers to read/write
         // messages. It is up to the actual client on the client-side to call the .recv() method
         // of ClientSock in order to receive the data sent by the server.
-        if (clientSocket != null)
+        if (clientSocket != null) {
             this.serverSocket.send(payload, clientSocket);
+        }
     }
     
     
@@ -271,8 +273,9 @@ public abstract class JServer {
         // actual client on the client-side to call the .recv() method of ClientSock in order to
         // receive the data sent by the server.
         for (JClientSocket clientSocket : this.clientConnections.keySet()) {
-            if (clientSocket != null)
+            if (clientSocket != null) {
                 this.serverSocket.send(payload, clientSocket);
+            }
         }
     }
     
@@ -296,8 +299,9 @@ public abstract class JServer {
      * @param clientSocket  the client connection to remove.
      */
     public void remove(JClientSocket clientSocket) {
-        if (clientSocket == null)
+        if (clientSocket == null) {
             return;
+        }
         
         Thread clientThread = this.clientConnections.get(clientSocket);
         if (clientThread != null) {
@@ -315,8 +319,9 @@ public abstract class JServer {
      * @see remove
      */
     public void close() {
-        for (JClientSocket clientSocket : this.clientConnections.keySet())
+        for (JClientSocket clientSocket : this.clientConnections.keySet()) {
             this.remove(clientSocket);
+        }
         
         this.serverSocket.close();
     }

@@ -88,14 +88,17 @@ public class JSSLServerSocket {
      * @see jnet.Header
      */
     public int send(byte[] payload, JSSLClientSocket clientConnection) {
-        if (clientConnection == null)
+        if (clientConnection == null) {
             return -1;
+        }
         
         try {
             OutputStream out = clientConnection.getOutputStream();
             byte[] body = CRC.attach(payload);
-            if (body == null)
+            if (body == null) {
                 return -1;
+            }
+
             byte[] message = Header.attach(body);
             out.write(message);
             out.flush();
@@ -127,19 +130,22 @@ public class JSSLServerSocket {
             // Read header
             byte[] header = new byte[Header.SIZE];
             int headerSize = in.read(header);
-            if (headerSize <= 0)
+            if (headerSize <= 0) {
                 return null;
+            }
             
             // Validate header
             Header.Info info = Header.validateAndParse(header);
-            if (info == null)
+            if (info == null) {
                 return null;
+            }
             
             // Read message
             byte[] body = new byte[info.size];
             int bodySize = in.read(body);
-            if (bodySize != body.length)
+            if (bodySize != body.length) {
                 return null;
+            }
             
             // Validate and return message
             byte[] payload = CRC.checkAndRemove(body);

@@ -52,11 +52,12 @@ public class Bytes {
      * @throws IllegalArgumentException  if {@code b.length != Integer.SIZE / Byte.SIZE == 4}.
      */
     public static int bytesToInt(byte[] b) {
-        if (b == null)
+        if (b == null) {
             throw new NullPointerException("b cannot be null");
-        if (b.length != Integer.SIZE / Byte.SIZE)
-            throw new IllegalArgumentException("invalid length for b: expected 4, found " +
-                                               b.length);
+        }
+        if (b.length != Integer.SIZE / Byte.SIZE) {
+            throw new IllegalArgumentException("invalid num bytes: expected 4, found " + b.length);
+        }
         
         ByteBuffer buf = ByteBuffer.wrap(b);
         buf.order(Bytes.ORDER);
@@ -74,8 +75,9 @@ public class Bytes {
      * @return a byte array representation of {@code object}
      */
     public static byte[] serialize(Object object) {
-        if (object == null)
+        if (object == null) {
             return null;
+        }
         
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
@@ -101,8 +103,9 @@ public class Bytes {
      *         appropriate).
      */
     public static Object deserialize(byte[] bytes) {
-        if (bytes == null)
+        if (bytes == null) {
             return null;
+        }
         
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         try {
@@ -124,8 +127,9 @@ public class Bytes {
      * @return a {@code byte[]} representation of {@code str}.
      */
     public static byte[] stringToBytes(String str) {
-        if (str == null)
+        if (str == null) {
             return null;
+        }
         return str.getBytes();
     }
     
@@ -140,8 +144,9 @@ public class Bytes {
      * @return a {@code String} representation of {@code bytes}.
      */
     public static String bytesToString(byte[] bytes) {
-        if (bytes == null)
+        if (bytes == null) {
             return null;
+        }
         return new String(bytes);
     }
     

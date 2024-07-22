@@ -57,8 +57,9 @@ public class JSSLClientSocket {
      * @return an {@code InputStream} object connected to the internal {@code SSLSocket} object.
      */
     public InputStream getInputStream() {
-        if (this.clientSocket == null || this.in == null)
+        if (this.clientSocket == null || this.in == null) {
             return null;
+        }
         return this.in;
     }
     
@@ -71,8 +72,9 @@ public class JSSLClientSocket {
      * @see getInputStream
      */
     public OutputStream getOutputStream() {
-        if (this.clientSocket == null || this.out == null)
+        if (this.clientSocket == null || this.out == null) {
             return null;
+        }
         return this.out;
     }
     
@@ -128,16 +130,21 @@ public class JSSLClientSocket {
      * @see jnet.Header
      */
     public int send(byte[] payload) {
-        if (this.out == null)
+        if (this.out == null) {
             return -1;
+        }
 	
         try {
             byte[] body = CRC.attach(payload);
-            if (body == null)
+            if (body == null) {
                 return -1;
+            }
+
             byte[] message = Header.attach(body);
-            if (message == null)
+            if (message == null) {
                 return -1;
+            }
+
             this.out.write(message);
             this.out.flush();
             return message.length;
@@ -176,26 +183,30 @@ public class JSSLClientSocket {
      * @return the received bytes.
      */
     public byte[] recv() {
-        if (this.in == null)
+        if (this.in == null) {
             return null;
+        }
 	
         try {
             // Read header
             byte[] header = new byte[Header.SIZE];
             int headerSize = this.in.read(header);
-            if (headerSize <= 0)
+            if (headerSize <= 0) {
                 return null;
+            }
             
             // Validate header
             Header.Info info = Header.validateAndParse(header);
-            if (info == null)
+            if (info == null) {
                 return null;
+            }
             
             // Read message
             byte[] body = new byte[info.size];
             int bodySize = this.in.read(body);
-            if (bodySize != body.length)
+            if (bodySize != body.length) {
                 return null;
+            }
             
             // Validate and return message
             byte[] payload = CRC.checkAndRemove(body);

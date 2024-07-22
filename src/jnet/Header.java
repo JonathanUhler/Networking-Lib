@@ -91,8 +91,9 @@ public class Header {
     private static byte[] generate(byte[] body) {
         // Validate the body, this also confirms non-null
         boolean hasValidCRC = CRC.check(body);
-        if (!hasValidCRC)
+        if (!hasValidCRC) {
             return null;
+        }
         
         // Get information for the header
         int length = body.length;
@@ -102,7 +103,8 @@ public class Header {
         byte[] header = new byte[Header.SIZE - CRC.NUM_BYTES];
         header[0] = Header.HEADER_BYTE;
         System.arraycopy(lengthBytes, 0, header,
-                         Header.BODY_LENGTH_OFFSET, Header.BODY_LENGTH_SIZE);
+                         Header.BODY_LENGTH_OFFSET,
+                         Header.BODY_LENGTH_SIZE);
         header = CRC.attach(header);
         return header;
     }
@@ -121,8 +123,9 @@ public class Header {
     public static byte[] attach(byte[] body) {
         // Get the header as a byte array
         byte[] header = Header.generate(body);
-        if (header == null)
+        if (header == null) {
             return null;
+        }
         
         // Attach header
         byte[] message = new byte[header.length + body.length];
@@ -184,13 +187,15 @@ public class Header {
          * @throws IllegalArgumentException  if header validation fails for any reason.
          */
         public Info(byte[] header) {
-            if (header == null || header.length != Header.SIZE)
+            if (header == null || header.length != Header.SIZE) {
                 throw new IllegalArgumentException("invalid header length, expected " +
                                                    Header.SIZE + ", found " +
                                                    (header == null ? "null" : header.length));
+            }
             
-            if (!CRC.check(header))
+            if (!CRC.check(header)) {
                 throw new IllegalArgumentException("invalid header crc");
+            }
             
             byte[] size = new byte[Header.BODY_LENGTH_SIZE];
             System.arraycopy(header, Header.BODY_LENGTH_OFFSET, size, 0, size.length);
@@ -201,11 +206,13 @@ public class Header {
             this.size = Bytes.bytesToInt(size);
             this.crc = Bytes.bytesToInt(crc);
             
-            if (this.size == Integer.MIN_VALUE || this.crc == Integer.MIN_VALUE)
+            if (this.size == Integer.MIN_VALUE || this.crc == Integer.MIN_VALUE) {
                 throw new IllegalArgumentException("could not parse size or crc");
+            }
             
-            if (this.size <= 0)
+            if (this.size <= 0) {
                 throw new IllegalArgumentException("invalid size: " + this.size);
+            }
         }
 	
     }

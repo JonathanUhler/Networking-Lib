@@ -74,8 +74,9 @@ public class CRC {
      *         integer, is the crc for {@code payload}.
      */
     private static byte[] generate(byte[] payload) {
-        if (payload == null || payload.length == 0)
+        if (payload == null || payload.length == 0) {
             return null;
+        }
         
         // Get CRC from string
         int crc32 = CRC.crc32(payload);
@@ -97,8 +98,9 @@ public class CRC {
     public static byte[] attach(byte[] payload) {
         // Get crc as byte array. The generate() call also confirms that payload != null
         byte[] crc = CRC.generate(payload);
-        if (crc == null)
+        if (crc == null) {
             return null;
+        }
         
         // Attach CRC bytes
         byte[] body = new byte[payload.length + crc.length];
@@ -119,8 +121,9 @@ public class CRC {
      *         {@code body[0, body.length - 4]}.
      */
     private static byte[] extractPayload(byte[] body) {
-        if (body == null || body.length <= CRC.NUM_BYTES)
+        if (body == null || body.length <= CRC.NUM_BYTES) {
             return null;
+        }
         
         byte[] payload = new byte[body.length - CRC.NUM_BYTES];
         System.arraycopy(body, 0, payload, 0, payload.length);
@@ -138,8 +141,9 @@ public class CRC {
      * @return the CRC of {@code body} as defined by {@code body[body.length - 4, body.length]}.
      */
     private static byte[] extractCRC(byte[] body) {
-        if (body == null || body.length <= CRC.NUM_BYTES)
+        if (body == null || body.length <= CRC.NUM_BYTES) {
             return null;
+        }
         
         byte[] crc = new byte[CRC.NUM_BYTES];
         System.arraycopy(body, body.length - CRC.NUM_BYTES, crc, 0, CRC.NUM_BYTES);
@@ -152,7 +156,7 @@ public class CRC {
      * argument represent the CRC valid for the first {@code n - 4} bytes of the array. 
      * <p>
      * {@code body} is guaranteed to remain unmodified; only {@code true} or {@code false} is 
-     * returned if the  checksum is valid, no bytes are ever changed. Note that {@code false} may 
+     * returned if the checksum is valid, no bytes are ever changed. Note that {@code false} may 
      * be returned upon error.
      *
      * @param body  the byte array to check the CRC for.
@@ -161,8 +165,9 @@ public class CRC {
      *         otherwise {@code false}.
      */
     public static boolean check(byte[] body) {
-        if (body == null || body.length <= CRC.NUM_BYTES)
+        if (body == null || body.length <= CRC.NUM_BYTES) {
             return false;
+        }
         
         // Split up the necessary components
         byte[] payload = CRC.extractPayload(body);
@@ -170,8 +175,9 @@ public class CRC {
         byte[] gen = CRC.generate(payload);
         
         // Check for validity
-        if (payload == null || crc == null || gen == null)
+        if (payload == null || crc == null || gen == null) {
             return false;
+        }
         
         // Check the CRC
         boolean passed = Arrays.equals(crc, gen);
@@ -191,8 +197,9 @@ public class CRC {
      */
     public static byte[] checkAndRemove(byte[] body) {
         boolean valid = CRC.check(body);
-        if (!valid)
+        if (!valid) {
             return null;
+        }
         return CRC.extractPayload(body);
     }
     

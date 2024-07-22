@@ -173,8 +173,9 @@ public abstract class JSSLServer {
      * @param clientConnection  a java {@code SSLSocket} object for the client that connected.
      */
     private void add(SSLSocket clientConnection) {
-        if (clientConnection == null)
+        if (clientConnection == null) {
             return;
+        }
         
         JSSLClientSocket clientSocket = new JSSLClientSocket(clientConnection);
         try {
@@ -263,8 +264,9 @@ public abstract class JSSLServer {
         // The JClientSocket objects here allow use of the IN and OUT buffers to read/write
         // messages. It is up to the actual client on the client-side to call the .recv() method
         // of ClientSock in order to receive the data sent by the server.
-        if (clientSocket != null)
+        if (clientSocket != null) {
             this.serverSocket.send(payload, clientSocket);
+        }
     }
     
     
@@ -294,8 +296,9 @@ public abstract class JSSLServer {
         // actual client on the client-side to call the .recv() method of ClientSock in order to
         // receive the data sent by the server.
         for (JSSLClientSocket clientSocket : this.clientConnections.keySet()) {
-            if (clientSocket != null)
+            if (clientSocket != null) {
                 this.serverSocket.send(payload, clientSocket);
+            }
         }
     }
     
@@ -319,8 +322,9 @@ public abstract class JSSLServer {
      * @param clientSocket  the client connection to remove.
      */
     public void remove(JSSLClientSocket clientSocket) {
-        if (clientSocket == null)
+        if (clientSocket == null) {
             return;
+        }
         
         Thread clientThread = this.clientConnections.get(clientSocket);
         if (clientThread != null) {
@@ -338,8 +342,9 @@ public abstract class JSSLServer {
      * @see remove
      */
     public void close() {
-        for (JSSLClientSocket clientSocket : this.clientConnections.keySet())
+        for (JSSLClientSocket clientSocket : this.clientConnections.keySet()) {
             this.remove(clientSocket);
+        }
         
         this.serverSocket.close();
     }

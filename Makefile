@@ -8,8 +8,8 @@ PYDOC_DIR    := docs/pydoc
 
 .PHONY: compile_jnet \
 	jar_jnet     \
-	build_jnet   \
-	build_pnet   \
+	jnet         \
+	pnet         \
 	javadoc      \
 	javadoc_dir  \
 	pydoc        \
@@ -25,13 +25,11 @@ compile_jnet: obj_dir
 jar_jnet: rel_dir
 	jar cf $(REL_DIR)/jnet.jar -C $(OBJ_DIR) .
 
-build_jnet: compile_jnet jar_jnet
+jnet: compile_jnet jar_jnet
 
-build_pnet: rel_dir
+pnet: rel_dir
 	mkdir -p $(REL_DIR)/pnet
-	rsync -r --exclude "*~" $(PNET_SRC_DIR) $(REL_DIR)/pnet
-	mv $(REL_DIR)/pnet/pnet/setup.py $(REL_DIR)/pnet
-	touch $(REL_DIR)/pnet/pnet/__init__.py
+	rsync -r --exclude "*~" $(PNET_SRC_DIR) $(REL_DIR)
 	tar -czf $(REL_DIR)/pnet.tar.gz -C $(REL_DIR) pnet
 
 javadoc: javadoc_dir
