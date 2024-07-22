@@ -1,8 +1,8 @@
-package jnet;
+package jnet.secure;
 
 
-import java.net.Socket;
-import java.lang.Thread;
+import jnet.Bytes;
+import javax.net.ssl.SSLSocket;
 import java.util.Map;
 import java.util.HashMap;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * C-style server template. This class provides the framework to create a server compatible with the
  * processes of this library. By default, the server runs on 127.0.0.1:9000, but this can be changed
- * with the second constructor.
+ * with the second constructor. This server supports SSL security.
  * <p>
  * Some notable abstract methods include:
  * <table style="border: 1px solid black">
@@ -47,13 +47,17 @@ import java.io.IOException;
  *                                        new clients in parallel.
  *  </tr>
  * </table>
+ * <p>
+ * The security protocols and cipher suites are defined in the {@code PROTOCOLS} and
+ * {@code CIPHER_SUITES} respectively. These cannot currently be changed by the end user during
+ * class construction.
  *
  * @see clientConnected
  * @see clientCommunicated
  *
  * @author Jonathan Uhler
  */
-public abstract class JServer {
+public abstract class JSSLServer {
     
     /** The default IP address for the server. */
     public static final String DEFAULT_IP_ADDR = "127.0.0.1";
@@ -61,10 +65,26 @@ public abstract class JServer {
     public static final int DEFAULT_PORT = 9000;
     /** The maximum number of clients that can be placed in the backlog buffer. */
     public static final int BACKLOG = 50;
+    /** The default security protocols. */
+    public static final String[] PROTOCOLS = new String[] {"TLSv1.2", "TLSv1.1", "TLSv1"};
+    /** The default cipher suites used for secure connections. */
+    public static final String[] CIPHER_SUITES = {"TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
+                                                  "TLS_RSA_WITH_AES_128_CBC_SHA",
+                                                  "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+                                                  "TLS_RSA_WITH_AES_128_CBC_SHA256",
+                                                  "TLS_RSA_WITH_AES_128_GCM_SHA256",
+                                                  "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                                                  "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                                                  "TLS_RSA_WITH_AES_256_CBC_SHA",
+                                                  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+                                                  "TLS_RSA_WITH_AES_256_CBC_SHA256",
+                                                  "TLS_RSA_WITH_AES_256_GCM_SHA384",
+                                                  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                                                  "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"};
     
     
-    private Map<JClientSocket, Thread> clientConnections;
-    private JServerSocket serverSocket;
+    private Map<JSSLClientSocket, Thread> clientConnections;
+    private JSSLServerSocket serverSocket;
     private String ip;
     private int port;
     
@@ -75,27 +95,28 @@ public abstract class JServer {
      *
      * @throws IOException  if the server cannot be bound to the IP address and port.
      */
-    public JServer() throws IOException {
-        this(JServer.DEFAULT_IP_ADDR, JServer.DEFAULT_PORT);
+    public JSSLServer() throws IOException {
+        this(JSSLServer.DEFAULT_IP_ADDR, JSSLServer.DEFAULT_PORT);
     }
     
     
     /**
-     * Constructs a {@code JServer} object with a given IP address and port.
+     * Constructs a {@code JSSLServer} object with a given IP address and port.
      *
      * @param ip    the IP address to start the server on.
      * @param port  the port to start the server on.
      *
      * @throws IOException  if the server cannot be bound to the IP address and port.
      */
-    public JServer(String ip, int port) throws IOException {
+    public JSSLServer(String ip, int port) throws IOException {
         this.ip = ip;
         this.port = port;
 	
         this.clientConnections = new HashMap<>();
 	
-        this.serverSocket = new JServerSocket();
-        this.serverSocket.bind(this.ip, this.port, JServer.BACKLOG);
+        this.serverSocket = new JSSLServerSocket();
+        this.serverSocket.bind(this.ip, this.port, JSSLServer.BACKLOG,
+                               JSSLServer.PROTOCOLS, JSSLServer.CIPHER_SUITES);
         
         // Start the accept method in a new thread. This allows more constructor code to be
         // added is desired
@@ -126,14 +147,14 @@ public abstract class JServer {
     
     /**
      * Waits for and accepts incoming client connections. This method runs in the main thread of 
-     * this {@code JServer} object. Other operations are managed by separate secondary threads.
+     * this {@code JSSLServer} object. Other operations are managed by separate secondary threads.
      */
     private void accept() {
         // Unconditionally wait for and accept client connections, then assign them an id/place in
         // the array and create a ClientSock object to represent that conneciton and allow .send()
         // calls towards that client
         while (true) {
-            Socket clientConnection = this.serverSocket.accept();
+            SSLSocket clientConnection = this.serverSocket.accept();
             
             // Add the client to the list of connected clients, and start listening
             this.add(clientConnection);
@@ -144,21 +165,23 @@ public abstract class JServer {
     /**
      * Processes a new client connection. This includes creating a new thread to handle 
      * communication with that client and putting the client into the {@code clientConnections} 
-     * map. Because the {@code JClientSocket::connect} method is volatile under normal use, an 
+     * map. Because the {@code JSSLClientSocket::connect} method is volatile under normal use, an 
      * IOException may be thrown. This error is caught by this method, although it should never 
      * occur if the server was able to bind successfully to the IP address and port given in the 
      * constructor.
      *
-     * @param clientConnection  a java {@code Socket} object for the client that connected.
+     * @param clientConnection  a java {@code SSLSocket} object for the client that connected.
      */
-    private void add(Socket clientConnection) {
+    private void add(SSLSocket clientConnection) {
         if (clientConnection == null) {
             return;
         }
         
-        JClientSocket clientSocket = new JClientSocket(clientConnection);
+        JSSLClientSocket clientSocket = new JSSLClientSocket(clientConnection);
         try {
-            clientSocket.connect(this.ip, this.port);
+            clientSocket.connect(this.ip, this.port,
+                                 JSSLServer.PROTOCOLS,
+                                 JSSLServer.CIPHER_SUITES);
         }
         catch (IOException e) {
             return;
@@ -182,29 +205,29 @@ public abstract class JServer {
     
     /**
      * Performs an arbitrary action when a client first connects. Called by the private 
-     * {@code JServer::add} method before the client's thread is started.
+     * {@code JSSLServer::add} method before the client's thread is started.
      *
      * @param clientSocket  the client that connected.
      */
-    public abstract void clientConnected(JClientSocket clientSocket);
+    public abstract void clientConnected(JSSLClientSocket clientSocket);
     
     
     /**
      * Performs an arbitrary action when a client disconnects. Called by the private 
-     * {@code JServer::listenOnClient} method before the client is removed from this 
-     * {@code JServer}'s scope.
+     * {@code JSSLServer::listenOnClient} method before the client is removed from this 
+     * {@code JSSLServer}'s scope.
      *
      * @param clientSocket  the client that disconnected.
      */
-    public abstract void clientDisconnected(JClientSocket clientSocket);
+    public abstract void clientDisconnected(JSSLClientSocket clientSocket);
     
     
     /**
      * Listens on a specific client.
      *
-     * @param clientSocket  the {@code JClientSocket} object to listen to.
+     * @param clientSocket  the {@code JSSLClientSocket} object to listen to.
      */
-    private void listenOnClient(JClientSocket clientSocket) {
+    private void listenOnClient(JSSLClientSocket clientSocket) {
         while (true) {
             byte[] recv = this.serverSocket.recv(clientSocket);
             if (recv == null) {
@@ -220,13 +243,13 @@ public abstract class JServer {
     
     /**
      * Performs an arbitrary action when a client sends a message. Called by the private 
-     * {@code Server::listenOnClient} method after validating the received message. The argument 
-     * {@code recv} is guaranteed to contain a valid, non-null message
+     * {@code JSSLServer::listenOnClient} method after validating the received message. The 
+     * argument {@code recv} is guaranteed to contain a valid, non-null message
      *
      * @param recv          the message received from the client
      * @param clientSocket  the client who sent the message
      */
-    public abstract void clientCommunicated(byte[] recv, JClientSocket clientSocket);
+    public abstract void clientCommunicated(byte[] recv, JSSLClientSocket clientSocket);
     
     
     /**
@@ -237,7 +260,7 @@ public abstract class JServer {
      *
      * @see jnet.JServerSocket
      */
-    public void send(byte[] payload, JClientSocket clientSocket) {
+    public void send(byte[] payload, JSSLClientSocket clientSocket) {
         // The JClientSocket objects here allow use of the IN and OUT buffers to read/write
         // messages. It is up to the actual client on the client-side to call the .recv() method
         // of ClientSock in order to receive the data sent by the server.
@@ -255,7 +278,7 @@ public abstract class JServer {
      *
      * @see jnet.JServerSocket
      */
-    public void send(String payload, JClientSocket clientSocket) {
+    public void send(String payload, JSSLClientSocket clientSocket) {
         this.send(Bytes.stringToBytes(payload), clientSocket);
     }
     
@@ -272,7 +295,7 @@ public abstract class JServer {
         // objects here allow use of the IN and OUT buffers to read/write messages. It is up to the
         // actual client on the client-side to call the .recv() method of ClientSock in order to
         // receive the data sent by the server.
-        for (JClientSocket clientSocket : this.clientConnections.keySet()) {
+        for (JSSLClientSocket clientSocket : this.clientConnections.keySet()) {
             if (clientSocket != null) {
                 this.serverSocket.send(payload, clientSocket);
             }
@@ -298,7 +321,7 @@ public abstract class JServer {
      *
      * @param clientSocket  the client connection to remove.
      */
-    public void remove(JClientSocket clientSocket) {
+    public void remove(JSSLClientSocket clientSocket) {
         if (clientSocket == null) {
             return;
         }
@@ -319,7 +342,7 @@ public abstract class JServer {
      * @see remove
      */
     public void close() {
-        for (JClientSocket clientSocket : this.clientConnections.keySet()) {
+        for (JSSLClientSocket clientSocket : this.clientConnections.keySet()) {
             this.remove(clientSocket);
         }
         

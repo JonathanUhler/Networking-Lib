@@ -62,161 +62,159 @@ package jnet;
  * @author Jonathan Uhler
  */
 public class Header {
-
-	/** The size, in bytes, of the header. */
-	public static final int SIZE = 8 + CRC.NUM_BYTES;
-	/** b[0] of the header. */
-	public static final byte HEADER_BYTE = 0x68;
-	/** The offset, in bytes, of the body length portion of the header (b[7, 4]). */
-	public static final int BODY_LENGTH_OFFSET = 4;
-	/** The length, in bytes, of the body length portion of the header (b[7, 4]). */
-	public static final int BODY_LENGTH_SIZE = 4;
-	/** The offset, in bytes, of the crc portion of the header (b[11, 8]). */
-	public static final int CRC_OFFSET = 8;
-	/** The length, in bytes, of the crc portion of the header (b[11, 8]). */
-	public static final int CRC_SIZE = CRC.NUM_BYTES;
-
-
-	private Header() { }
-
-
-	/**
-	 * Generates a header for a given body. The CRC bytes attached to {@code body} WILL be 
-	 * validated by this method. If the CRC is found to be invalid, {@code null} is returned and 
-	 * an error is logged.
-	 *
-	 * @param body  a payload and crc to generate a header for
-	 *
-	 * @return a byte array containing the header for {@code body}.
-	 *
-	 * @see jnet.Log
-	 */
-	private static byte[] generate(byte[] body) {
-		// Validate the body, this also confirms non-null
-		boolean hasValidCRC = CRC.check(body);
-		if (!hasValidCRC) {
-			Log.stdlog(Log.ERROR, "Header",
-					   "body must have a valid CRC before the header is generated");
-			return null;
-		}
-
-		// Get information for the header
-		int length = body.length;
-		byte[] lengthBytes = Bytes.intToBytes(length);
-
-		// Create and return the header
-		byte[] header = new byte[Header.SIZE - CRC.NUM_BYTES];
-		header[0] = Header.HEADER_BYTE;
-		System.arraycopy(lengthBytes, 0, header,
-						 Header.BODY_LENGTH_OFFSET, Header.BODY_LENGTH_SIZE);
-		header = CRC.attach(header);
-		return header;
-	}
-
-
-	/**
-	 * Creates and attaches a header to the argument {@code body}. A new byte array is returned 
-	 * containing {@code header + body} in that order. The contents of {@code body} are not 
-	 * modified. This method will validate the crc of the payload and return {@code null} if the 
-	 * crc is invalid.
-	 *
-	 * @param body  the message body (which must contain a crc) to generate and attach a header to
-	 *
-	 * @return a new array containing {@code header + body} in that order.
-	 */
-	public static byte[] attach(byte[] body) {
-		// Get the header as a byte array
-		byte[] header = Header.generate(body);
-		if (header == null)
-			return null;
-
-		// Attach header
-		byte[] message = new byte[header.length + body.length];
-		System.arraycopy(header, 0, message, 0, header.length);
-		System.arraycopy(body, 0, message, message.length - body.length, body.length);
-		return message;
-	}
-
-
-	/**
-	 * Validates and parses the content of a given header as a {@code Header.Info} object. 
-	 * "Validation" includes a check of the header crc. Upon any validation error {@code null} is 
-	 * returned and an error is logged. If the validation succeeds 
-	 * ({@code Header::validateAndParse() != null}), the data in the struct is guaranteed to be 
-	 * valid.
-	 *
-	 * @param header  the header to validate.
-	 *
-	 * @return a {@code Header.Info} struct containing all the information of the header in more
-	 *         accessible public instance variables.
-	 *
-	 * @see jnet.Header.Info
-	 * @see jnet.Log
-	 */
-	public static Info validateAndParse(byte[] header) {
-		try {
-			Info info = new Info(header);
-			return info;
-		}
-		catch (IllegalArgumentException e) {
-			Log.stdlog(Log.ERROR, "Header", "could not validate header: " + e);
-			return null;
-		}
-	}
-
-
-
-	/**
-	 * Wrapper structure for the byte-array representation of a header. The constructor of this 
-	 * class automatically validates the header byte-array for correctness.
-	 *
-	 * @author Jonathan Uhler
-	 */
-	public static class Info {
-
-		/** The header id (b[0]). */
-		public byte id;
-		/** The size of the body attached to this header (b[7, 4]). */
-		public int size;
-		/** The crc checksum for the header only (b[11, 8]). */
-		public int crc;
-
-
-		/**
-		 * Constructs a {@code Header.Info} object from a header byte array. This constructor 
-		 * validates the information contained within the argument {@code header}. If the data can 
-		 * be validated the instance variables of this class are set appropriately. Upon error an 
-		 * exception is thrown.
-		 *
-		 * @param header  the header to validate and parse.
-		 *
-		 * @throws IllegalArgumentException  if header validation fails for any reason.
-		 */
-		public Info(byte[] header) {
-			if (header == null || header.length != Header.SIZE)
-				throw new IllegalArgumentException("invalid header length, expected " +
-												   Header.SIZE + ", found " +
-												   (header == null ? "null" : header.length));
-
-			if (!CRC.check(header))
-				throw new IllegalArgumentException("invalid header crc");
-
-		    byte[] size = new byte[Header.BODY_LENGTH_SIZE];
-			System.arraycopy(header, Header.BODY_LENGTH_OFFSET, size, 0, size.length);
-			byte[] crc = new byte[Header.CRC_SIZE];
-			System.arraycopy(header, Header.CRC_OFFSET, crc, 0, crc.length);
-			
-			this.id = header[0];
-			this.size = Bytes.bytesToInt(size);
-			this.crc = Bytes.bytesToInt(crc);
-
-			if (this.size == Integer.MIN_VALUE || this.crc == Integer.MIN_VALUE)
-				throw new IllegalArgumentException("could not parse size or crc");
-
-			if (this.size <= 0)
-				throw new IllegalArgumentException("invalid size: " + this.size);
-		}
-		
-	}
-
+    
+    /** The size, in bytes, of the header. */
+    public static final int SIZE = 8 + CRC.NUM_BYTES;
+    /** b[0] of the header. */
+    public static final byte HEADER_BYTE = 0x68;
+    /** The offset, in bytes, of the body length portion of the header (b[7, 4]). */
+    public static final int BODY_LENGTH_OFFSET = 4;
+    /** The length, in bytes, of the body length portion of the header (b[7, 4]). */
+    public static final int BODY_LENGTH_SIZE = 4;
+    /** The offset, in bytes, of the crc portion of the header (b[11, 8]). */
+    public static final int CRC_OFFSET = 8;
+    /** The length, in bytes, of the crc portion of the header (b[11, 8]). */
+    public static final int CRC_SIZE = CRC.NUM_BYTES;
+    
+    
+    private Header() { }
+    
+    
+    /**
+     * Generates a header for a given body. The CRC bytes attached to {@code body} WILL be 
+     * validated by this method. If the CRC is found to be invalid, {@code null} is returned.
+     *
+     * @param body  a payload and crc to generate a header for
+     *
+     * @return a byte array containing the header for {@code body}.
+     */
+    private static byte[] generate(byte[] body) {
+        // Validate the body, this also confirms non-null
+        boolean hasValidCRC = CRC.check(body);
+        if (!hasValidCRC) {
+            return null;
+        }
+        
+        // Get information for the header
+        int length = body.length;
+        byte[] lengthBytes = Bytes.intToBytes(length);
+        
+        // Create and return the header
+        byte[] header = new byte[Header.SIZE - CRC.NUM_BYTES];
+        header[0] = Header.HEADER_BYTE;
+        System.arraycopy(lengthBytes, 0, header,
+                         Header.BODY_LENGTH_OFFSET,
+                         Header.BODY_LENGTH_SIZE);
+        header = CRC.attach(header);
+        return header;
+    }
+    
+    
+    /**
+     * Creates and attaches a header to the argument {@code body}. A new byte array is returned 
+     * containing {@code header + body} in that order. The contents of {@code body} are not 
+     * modified. This method will validate the crc of the payload and return {@code null} if the 
+     * crc is invalid.
+     *
+     * @param body  the message body (which must contain a crc) to generate and attach a header to
+     *
+     * @return a new array containing {@code header + body} in that order.
+     */
+    public static byte[] attach(byte[] body) {
+        // Get the header as a byte array
+        byte[] header = Header.generate(body);
+        if (header == null) {
+            return null;
+        }
+        
+        // Attach header
+        byte[] message = new byte[header.length + body.length];
+        System.arraycopy(header, 0, message, 0, header.length);
+        System.arraycopy(body, 0, message, message.length - body.length, body.length);
+        return message;
+    }
+    
+    
+    /**
+     * Validates and parses the content of a given header as a {@code Header.Info} object. 
+     * "Validation" includes a check of the header crc. Upon any validation error {@code null} is 
+     * returned. If the validation succeeds  ({@code Header::validateAndParse() != null}), the data
+     * in the struct is guaranteed to be valid.
+     *
+     * @param header  the header to validate.
+     *
+     * @return a {@code Header.Info} struct containing all the information of the header in more
+     *         accessible public instance variables.
+     *
+     * @see jnet.Header.Info
+     */
+    public static Info validateAndParse(byte[] header) {
+        try {
+            Info info = new Info(header);
+            return info;
+        }
+        catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+    
+    
+    
+    /**
+     * Wrapper structure for the byte-array representation of a header. The constructor of this 
+     * class automatically validates the header byte-array for correctness.
+     *
+     * @author Jonathan Uhler
+     */
+    public static class Info {
+        
+        /** The header id (b[0]). */
+        public byte id;
+        /** The size of the body attached to this header (b[7, 4]). */
+        public int size;
+        /** The crc checksum for the header only (b[11, 8]). */
+        public int crc;
+        
+        
+        /**
+         * Constructs a {@code Header.Info} object from a header byte array. This constructor 
+         * validates the information contained within the argument {@code header}. If the data can 
+         * be validated the instance variables of this class are set appropriately. Upon error an 
+         * exception is thrown.
+         *
+         * @param header  the header to validate and parse.
+         *
+         * @throws IllegalArgumentException  if header validation fails for any reason.
+         */
+        public Info(byte[] header) {
+            if (header == null || header.length != Header.SIZE) {
+                throw new IllegalArgumentException("invalid header length, expected " +
+                                                   Header.SIZE + ", found " +
+                                                   (header == null ? "null" : header.length));
+            }
+            
+            if (!CRC.check(header)) {
+                throw new IllegalArgumentException("invalid header crc");
+            }
+            
+            byte[] size = new byte[Header.BODY_LENGTH_SIZE];
+            System.arraycopy(header, Header.BODY_LENGTH_OFFSET, size, 0, size.length);
+            byte[] crc = new byte[Header.CRC_SIZE];
+            System.arraycopy(header, Header.CRC_OFFSET, crc, 0, crc.length);
+            
+            this.id = header[0];
+            this.size = Bytes.bytesToInt(size);
+            this.crc = Bytes.bytesToInt(crc);
+            
+            if (this.size == Integer.MIN_VALUE || this.crc == Integer.MIN_VALUE) {
+                throw new IllegalArgumentException("could not parse size or crc");
+            }
+            
+            if (this.size <= 0) {
+                throw new IllegalArgumentException("invalid size: " + this.size);
+            }
+        }
+	
+    }
+    
 }

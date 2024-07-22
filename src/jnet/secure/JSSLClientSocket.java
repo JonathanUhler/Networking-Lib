@@ -1,7 +1,11 @@
-package jnet;
+package jnet.secure;
 
 
-import java.net.Socket;
+import jnet.CRC;
+import jnet.Header;
+import jnet.Bytes;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.net.UnknownHostException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,37 +13,37 @@ import java.io.IOException;
 
 
 /**
- * C-style socket wrapper for clients.
+ * C-style socket wrapper for clients with SSL security support.
  *
  * @author Jonathan Uhler
  */
-public class JClientSocket {
+public class JSSLClientSocket {
     
-    private Socket clientSocket;
+    private SSLSocket clientSocket;
     private InputStream in;
     private OutputStream out;
     
     
     /**
-     * Constructs an uninitialized {@code JClientSocket} object. The internal {@code Socket} 
-     * representation will only be initialized upon the call to {@code JClientSocket::connect()}.
+     * Constructs an uninitialized {@code JSSLClientSocket} object. The internal {@code SSLSocket} 
+     * representation will only be initialized upon the call to {@code JSSLClientSocket::connect()}.
      *
      * @see connect
      */
-    public JClientSocket() {}
+    public JSSLClientSocket() {}
     
     
     /**
-     * Constructs a partially initialized {@code JClientSocket} object. The 
-     * {@code JClientSocket::connect()} method must still be called to fully initialize this 
+     * Constructs a partially initialized {@code JSSLClientSocket} object. The 
+     * {@code JSSLClientSocket::connect()} method must still be called to fully initialize this 
      * object, but the optional argument allows for a pre-defined connection to be used instead.
      *
-     * @param clientSocket  a java {@code Socket} object used to begin the initialization of a 
-     *                      {@code JClientSocketet} object.
+     * @param clientSocket  a java {@code SSLSocket} object used to begin the initialization of a 
+     *                      {@code JSSLClientSocketet} object.
      *
      * @see connect
      */
-    public JClientSocket(Socket clientSocket) {
+    public JSSLClientSocket(SSLSocket clientSocket) {
         this.clientSocket = clientSocket;
     }
     
@@ -50,7 +54,7 @@ public class JClientSocket {
      * methods, is done in java through the I/O streams, which needs to be taken from the client 
      * socket for the listen/send calls.
      *
-     * @return an {@code InputStream} object connected to the internal {@code Socket} object.
+     * @return an {@code InputStream} object connected to the internal {@code SSLSocket} object.
      */
     public InputStream getInputStream() {
         if (this.clientSocket == null || this.in == null) {
@@ -63,7 +67,7 @@ public class JClientSocket {
     /**
      * Returns the OutputStream object from the locally stored java Socket object.
      *
-     * @return an {@code OutputStream} object connected to the internal {@code Socket} object.
+     * @return an {@code OutputStream} object connected to the internal {@code SSLSocket} object.
      *
      * @see getInputStream
      */
@@ -77,21 +81,30 @@ public class JClientSocket {
     
     /**
      * Connects this socket to a destination address. Performs the action of the C socket 
-     * {@code connect()} by wrapping the creation of the java I/O streams. If the connection fails,
-     * an {@code IOException} is thrown.
+     * {@code connect()} by wrapping the creation of the java I/O streams.
      *
-     * @param ip    an IP address to connect to.
-     * @param port  a port to connect to.
+     * @param ip            an IP address to connect to.
+     * @param port          a port to connect to.
+     * @param protocols     a list of security protocol names to use.
+     * @param cipherSuites  a list of cipher names to use.
      *
-     * @throws IOException  if the java {@code Socket} object cannot be initialized.
+     * @throws IOException  if the java {@code SSLSocket} object cannot be initialized.
      */
-    public void connect(String ip, int port) throws IOException {
+    public void connect(String ip,
+                        int port,
+                        String[] protocols,
+                        String[] cipherSuites) throws IOException
+    {
         // Because a constructor is provided to take in an existing socket object, a null
         // check is put here to confirm the socket needs to be created. Otherwise, it is
         // assumed the passed socket contains the correct IP/port. Although, this method is
         // not actually called in the case where the second constructor is used
         if (this.clientSocket == null) {
-            this.clientSocket = new Socket(ip, port);
+            this.clientSocket = (SSLSocket) SSLSocketFactory
+                .getDefault()
+                .createSocket(ip, port);
+            this.clientSocket.setEnabledProtocols(protocols);
+            this.clientSocket.setEnabledCipherSuites(cipherSuites);
         }
 	
         // This is java's way of handling socket I/O. The main purpose of this method is to
@@ -144,7 +157,7 @@ public class JClientSocket {
     
     /**
      * Sends a string across the socket. Identical to 
-     * {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
+     * {@code JSSLClientSocket::send(Bytes.stringToBytes(payload))}.
      *
      * @param payload  a string to send
      *
@@ -207,7 +220,7 @@ public class JClientSocket {
     
     /**
      * Receives bytes across the socket and parses them as a string. Identical to 
-     * {@code Bytes.bytesToString(JClientSocket::recv())}. This implies {@code null} may be 
+     * {@code Bytes.bytesToString(JSSLClientSocket::recv())}. This implies {@code null} may be 
      * returned if the bytes cannot be parsed as a string for any reason.
      *
      * @return a string representation of the bytes read.
