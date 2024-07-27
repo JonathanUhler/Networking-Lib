@@ -81,25 +81,26 @@ public class Header {
     
     
     /**
-     * Generates a header for a given body. The CRC bytes attached to {@code body} WILL be 
-     * validated by this method. If the CRC is found to be invalid, {@code null} is returned.
+     * Generates a header for a given body.
+     *
+     * The CRC bytes attached to {@code body} WILL be validated by this method. If the CRC is
+     * found to be invalid, an exception is thrown.
      *
      * @param body  a payload and crc to generate a header for
      *
      * @return a byte array containing the header for {@code body}.
+     * 
+     * @throws MalformedDataException  if the body has an invalid CRC.
      */
     private static byte[] generate(byte[] body) {
-        // Validate the body, this also confirms non-null
         boolean hasValidCRC = CRC.check(body);
         if (!hasValidCRC) {
-            return null;
+            throw new MalformedDataException("body has invalid crc");
         }
-        
-        // Get information for the header
+
         int length = body.length;
         byte[] lengthBytes = Bytes.intToBytes(length);
-        
-        // Create and return the header
+
         byte[] header = new byte[Header.SIZE - CRC.NUM_BYTES];
         header[0] = Header.HEADER_BYTE;
         System.arraycopy(lengthBytes, 0, header,
@@ -111,23 +112,24 @@ public class Header {
     
     
     /**
-     * Creates and attaches a header to the argument {@code body}. A new byte array is returned 
-     * containing {@code header + body} in that order. The contents of {@code body} are not 
-     * modified. This method will validate the crc of the payload and return {@code null} if the 
-     * crc is invalid.
+     * Creates and attaches a header to the argument {@code body}.
      *
-     * @param body  the message body (which must contain a crc) to generate and attach a header to
+     * A new byte array is returned containing {@code header + body} in that order. The contents
+     * of {@code body} are not modified.
+     *
+     * @param body  the message body (which must contain a crc) to generate and attach a header to.
      *
      * @return a new array containing {@code header + body} in that order.
+     *
+     * @throws NullPointerException    if {@code body} is null.
+     * @throws MalformedDataException  if the body has an invalid CRC.
      */
     public static byte[] attach(byte[] body) {
-        // Get the header as a byte array
-        byte[] header = Header.generate(body);
-        if (header == null) {
-            return null;
+        if (body == null) {
+            throw new NullPointerException("body cannot be null");
         }
-        
-        // Attach header
+
+        byte[] header = Header.generate(body);
         byte[] message = new byte[header.length + body.length];
         System.arraycopy(header, 0, message, 0, header.length);
         System.arraycopy(body, 0, message, message.length - body.length, body.length);
@@ -136,10 +138,11 @@ public class Header {
     
     
     /**
-     * Validates and parses the content of a given header as a {@code Header.Info} object. 
-     * "Validation" includes a check of the header crc. Upon any validation error {@code null} is 
-     * returned. If the validation succeeds  ({@code Header::validateAndParse() != null}), the data
-     * in the struct is guaranteed to be valid.
+     * Validates and parses the content of a given header as a {@code Header.Info} object.
+     *
+     * "Validation" includes a check of the header crc. Upon any validation error, an
+     * exception is thrown. If the validation succeeds, the data in the struct is guaranteed to
+     * be valid.
      *
      * @param header  the header to validate.
      *
@@ -149,13 +152,7 @@ public class Header {
      * @see jnet.Header.Info
      */
     public static Info validateAndParse(byte[] header) {
-        try {
-            Info info = new Info(header);
-            return info;
-        }
-        catch (IllegalArgumentException e) {
-            return null;
-        }
+        return new Info(header);
     }
     
     
@@ -184,17 +181,21 @@ public class Header {
          *
          * @param header  the header to validate and parse.
          *
-         * @throws IllegalArgumentException  if header validation fails for any reason.
+         * @throws NullPointerException    if {@code header} is null.
+         * @throws MissingDataException    if the header length is not {@code Header.SIZE}.
+         * @throws MalformedDataException  if the CRC in the header is invalid.
+         * @throws MalformedDataException  if the payload size in the header negative.
          */
         public Info(byte[] header) {
-            if (header == null || header.length != Header.SIZE) {
-                throw new IllegalArgumentException("invalid header length, expected " +
-                                                   Header.SIZE + ", found " +
-                                                   (header == null ? "null" : header.length));
+            if (header == null) {
+                throw new NullPointerException("header cannot be null");
             }
-            
+            if (header.length != Header.SIZE) {
+                throw new MissingDataException("invalid header length, expected " +
+                                               Header.SIZE + ", found " + header.length);
+            }
             if (!CRC.check(header)) {
-                throw new IllegalArgumentException("invalid header crc");
+                throw new MalformedDataException("invalid header crc");
             }
             
             byte[] size = new byte[Header.BODY_LENGTH_SIZE];
@@ -206,12 +207,8 @@ public class Header {
             this.size = Bytes.bytesToInt(size);
             this.crc = Bytes.bytesToInt(crc);
             
-            if (this.size == Integer.MIN_VALUE || this.crc == Integer.MIN_VALUE) {
-                throw new IllegalArgumentException("could not parse size or crc");
-            }
-            
-            if (this.size <= 0) {
-                throw new IllegalArgumentException("invalid size: " + this.size);
+            if (this.size < 0) {
+                throw new MalformedDataException("invalid payload size: " + this.size);
             }
         }
 	

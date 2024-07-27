@@ -4,6 +4,7 @@ import org.junit.Test;
 import org.junit.Assert;
 import org.junit.Assume;
 import jnet.Bytes;
+import jnet.MissingDataException;
 
 
 public class TestBytes {
@@ -20,6 +21,23 @@ public class TestBytes {
     }
 
     @Test
+    public void testBytesToIntWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Bytes.bytesToInt(null));
+    }
+
+    @Test
+    public void testBytesToIntWithLongArgument() {
+        Assert.assertThrows(MissingDataException.class,
+                            () -> Bytes.bytesToInt(new byte[] {0,1,2,3,4}));
+    }
+
+    @Test
+    public void testBytesToIntWithShortArgument() {
+        Assert.assertThrows(MissingDataException.class,
+                            () -> Bytes.bytesToInt(new byte[] {0,1,2}));
+    }
+
+    @Test
     public void testSerDesString() {
         for (int i = 0; i < TestMain.RANDOM_TEST_AMOUNT; i++) {
             String expected = TestMain.randomString(100);
@@ -28,6 +46,16 @@ public class TestBytes {
 
             Assert.assertEquals(generated, expected);
         }
+    }
+
+    @Test
+    public void testSerializeWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Bytes.serialize(null));
+    }
+
+    @Test
+    public void testDeserializeWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Bytes.deserialize(null));
     }
 
     @Test
@@ -55,6 +83,26 @@ public class TestBytes {
 
             Assert.assertEquals(generated, expected);
         }
+    }
+
+    @Test
+    public void testStringToBytesWithEmptyArgument() {
+        Assert.assertArrayEquals(Bytes.stringToBytes(""), new byte[] {});
+    }
+
+    @Test
+    public void testBytesToStringWithEmptyArgument() {
+        Assert.assertEquals(Bytes.bytesToString(new byte[] {}), "");
+    }
+
+    @Test
+    public void testStringToBytesWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Bytes.stringToBytes(null));
+    }
+
+    @Test
+    public void testBytesToStringWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Bytes.bytesToString(null));
     }
 
 }

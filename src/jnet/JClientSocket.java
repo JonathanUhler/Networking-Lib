@@ -21,8 +21,10 @@ public class JClientSocket {
     
     
     /**
-     * Constructs an uninitialized {@code JClientSocket} object. The internal {@code Socket} 
-     * representation will only be initialized upon the call to {@code JClientSocket::connect()}.
+     * Constructs an uninitialized {@code JClientSocket} object.
+     *
+     * The internal {@code Socket} representation will only be initialized upon the call to
+     * {@code JClientSocket::connect()}.
      *
      * @see connect
      */
@@ -30,8 +32,9 @@ public class JClientSocket {
     
     
     /**
-     * Constructs a partially initialized {@code JClientSocket} object. The 
-     * {@code JClientSocket::connect()} method must still be called to fully initialize this 
+     * Constructs a partially initialized {@code JClientSocket} object.
+     *
+     * The {@code JClientSocket::connect()} method must still be called to fully initialize this
      * object, but the optional argument allows for a pre-defined connection to be used instead.
      *
      * @param clientSocket  a java {@code Socket} object used to begin the initialization of a 
@@ -45,10 +48,13 @@ public class JClientSocket {
     
     
     /**
-     * Returns the InputStream object from the locally stored java Socket object. This is provided 
-     * so servers can "listen" and "send" on the client socket. This function, unlike the C 
-     * methods, is done in java through the I/O streams, which needs to be taken from the client 
-     * socket for the listen/send calls.
+     * Returns the InputStream object from the locally stored java Socket object.
+     *
+     * This is provided so servers can "listen" and "send" on the client socket. This function,
+     * unlike the C methods, is done in java through the I/O streams, which need to be taken from
+     * the client socket for the listen/send calls.
+     *
+     * If this client socket is not yet connected, {@code null} will be returned.
      *
      * @return an {@code InputStream} object connected to the internal {@code Socket} object.
      */
@@ -76,9 +82,10 @@ public class JClientSocket {
     
     
     /**
-     * Connects this socket to a destination address. Performs the action of the C socket 
-     * {@code connect()} by wrapping the creation of the java I/O streams. If the connection fails,
-     * an {@code IOException} is thrown.
+     * Connects this socket to a destination address.
+     *
+     * Performs the action of the C socket {@code connect()} by wrapping the creation of the
+     * java I/O streams. If the connection fails, an {@code IOException} is thrown.
      *
      * @param ip    an IP address to connect to.
      * @param port  a port to connect to.
@@ -102,49 +109,45 @@ public class JClientSocket {
     
     
     /**
-     * Sends a payload across the socket. This method integrates CRC and header options on its own.
-     * These elements should not be added by the caller (if they are, they will be ignored and 
-     * treated as part of the message payload). The payload must contain at least 1 byte. If an 
-     * error occurs with the CRC generation, header generation, payload structure, or send 
-     * operation, -1 returned.
+     * Sends a byte payload across the socket.
+     *
+     * This method integrates CRC and header parsing on its own. These elements should not be
+     * added by the caller (if they are, they will be ignored and treated as part of the message
+     * payload). An exception will be thrown upon error.
      *
      * @param payload  a byte array to send.
      *
      * @return the number of bytes sent, including the length of the attached crc, header, 
-     *         and possible pad bytes.
+     *         and possible pad bytes. If this socket is not yet initialized, -1 is returned.
+     *
+     * @throws NullPointerException    if {@code payload} is null.
+     * @throws IOException             if a network error occurs.
+     * @throws MalformedDataException  if an error occurs with CRC generation.
      *
      * @see jnet.CRC
      * @see jnet.Header
      */
-    public int send(byte[] payload) {
+    public int send(byte[] payload) throws IOException {
+        if (payload == null) {
+            throw new NullPointerException("payload cannot be null");
+        }
         if (this.out == null) {
             return -1;
         }
-	
-        try {
-            byte[] body = CRC.attach(payload);
-            if (body == null) {
-                return -1;
-            }
 
-            byte[] message = Header.attach(body);
-            if (message == null) {
-                return -1;
-            }
+        byte[] body = CRC.attach(payload);
+        byte[] message = Header.attach(body);
 
-            this.out.write(message);
-            this.out.flush();
-            return message.length;
-        }
-        catch (IOException e) {
-            return -1;
-        }
+        this.out.write(message);
+        this.out.flush();
+        return message.length;
     }
     
     
     /**
-     * Sends a string across the socket. Identical to 
-     * {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
+     * Sends a string across the socket.
+     *
+     * This is identical to {@code JClientSocket::send(Bytes.stringToBytes(payload))}.
      *
      * @param payload  a string to send
      *
@@ -152,88 +155,88 @@ public class JClientSocket {
      *         and possible pad bytes.
      *
      * @see send(byte[])
+     *
+     * @throws IOException  if a network error occurs.
      */
-    public int send(String payload) {
+    public int send(String payload) throws IOException {
         return this.send(Bytes.stringToBytes(payload));
     }
     
     
     /**
-     * Receives bytes across the socket. If the read could not be performed or either the header 
-     * or crc check fails, {@code null} is returned. This method validates and detaches the crc and
-     * header bytes if valid.
-     * <p>
+     * Receives bytes across the socket.
+     *
+     * If the read could not be performed or either the header or crc check fails, an exception
+     * is thrown. This method validates and detaches the crc and header bytes if valid.
+     *
      * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} 
      * object. If the header CRC check passes, {@code Header.Info::size} bytes are read. If the 
      * CRC check passes for this body, the payload is returned.
      *
+     * If this client socket is not connected or there isn't a message to be received,
+     * {@code null} is returned.
+     *
      * @return the received bytes.
+     *
+     * @throws IOException             if a network error occurs.
+     * @throws MalformedDataException  if a CRC check fails.
      */
-    public byte[] recv() {
+    public byte[] recv() throws IOException {
         if (this.in == null) {
             return null;
         }
-	
-        try {
-            // Read header
-            byte[] header = new byte[Header.SIZE];
-            int headerSize = this.in.read(header);
-            if (headerSize <= 0) {
-                return null;
-            }
-            
-            // Validate header
-            Header.Info info = Header.validateAndParse(header);
-            if (info == null) {
-                return null;
-            }
-            
-            // Read message
-            byte[] body = new byte[info.size];
-            int bodySize = this.in.read(body);
-            if (bodySize != body.length) {
-                return null;
-            }
-            
-            // Validate and return message
-            byte[] payload = CRC.checkAndRemove(body);
-            return payload;
-        }
-        catch (IOException e) {
+
+        byte[] header = new byte[Header.SIZE];
+        int headerSize = this.in.read(header);
+        if (headerSize == -1) {
             return null;
         }
+        Header.Info info = Header.validateAndParse(header);
+
+        byte[] body = new byte[info.size];
+        int bodySize = this.in.read(body);
+
+        byte[] payload = CRC.checkAndRemove(body);
+        return payload;
     }
     
     
     /**
-     * Receives bytes across the socket and parses them as a string. Identical to 
-     * {@code Bytes.bytesToString(JClientSocket::recv())}. This implies {@code null} may be 
-     * returned if the bytes cannot be parsed as a string for any reason.
+     * Receives bytes across the socket and parses them as a string.
+     *
+     * This is identical to {@code Bytes.bytesToString(JClientSocket::recv())}.
      *
      * @return a string representation of the bytes read.
      *
+     * @throws IOException  if a network error occurs.
+     *
      * @see recv
      */
-    public String srecv() {
+    public String srecv() throws IOException {
         return Bytes.bytesToString(this.recv());
     }
     
     
     /**
-     * Closes the socket connection. If the connection cannot be closed, a {@code RuntimeException}
-     * is thrown.
+     * Closes the socket connection.
+     *
+     * If the connection cannot be closed, a {@code RuntimeException} is thrown.
+     *
+     * @throws RuntimeException  if the connection cannot be closed.
      */
     public void close() {
-        if (this.clientSocket != null) {
-            try {
-                this.in.close();
-                this.out.close();
-                this.clientSocket.close();
-            }
-            catch (IOException e) {
-                throw new RuntimeException("cannot close socket: " + e);
-            }
+        if (this.clientSocket == null) {
+            return;
+        }
+
+        try {
+            this.in.close();
+            this.out.close();
+            this.clientSocket.close();
+        }
+        catch (IOException e) {
+            throw new RuntimeException("cannot close socket: " + e);
         }
     }
-    
+
 }

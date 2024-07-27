@@ -34,32 +34,24 @@ public class JServerSocket {
     
     
     /**
-     * Waits for and accepts an incoming client connection. If an error occurs, {@code null}
-     * is returned.
+     * Waits for and accepts an incoming client connection.
      *
      * @return a {@code Socket} object of the connecting client.
+     *
+     * @throws IOException  if a network error occurs.
      */
-    public Socket accept() {
-        try {
-            if (this.serverSocket != null) {
-                return this.serverSocket.accept();
-            }
-        }
-        catch (IOException e) {
-            return null;
-        }
-	
-        return null;
+    public Socket accept() throws IOException {
+        return this.serverSocket.accept();
     }
     
     
     /**
-     * Sends a message across the socket to a specific client. This method handles the use of a 
-     * CRC and header automatically. The argument {@code payload} should not contain these 
-     * elements. If they are present they will be ignored and treated as part of the payload. The 
-     * argument byte array must also contain at least 1 byte, and abide by any other preconditions 
-     * demanded by the CRC and Header routines. Upon any server-side error, {@code -1} will be 
-     * returned.
+     * Sends a message across the socket to a specific client.
+     *
+     * This method handles the use of a CRC and header automatically. The argument {@code payload}
+     * should not contain these elements. If they are present they will be ignored and treated as
+     * part of the payload. The argument byte array must also abide by any other preconditions
+     * demanded by the CRC and Header routines. An exception will be thrown upon any error.
      *
      * @param payload           a byte array to send.
      * @param clientConnection  the client to send to.
@@ -67,94 +59,82 @@ public class JServerSocket {
      * @return the number of bytes sent, including the length of the attached crc, header, and 
      *         possible pad bytes.
      *
+     * @throws NullPointerException  if either argument is null.
+     * @throws IOException           if a network error occurs.
+     *
      * @see jnet.CRC
      * @see jnet.Header
      */
-    public int send(byte[] payload, JClientSocket clientConnection) {
+    public int send(byte[] payload, JClientSocket clientConnection) throws IOException {
+        if (payload == null) {
+            throw new NullPointerException("payload cannot be null");
+        }
         if (clientConnection == null) {
-            return -1;
+            throw new NullPointerException("clientConnection cannot be null");
         }
-        
-        try {
-            OutputStream out = clientConnection.getOutputStream();
-            byte[] body = CRC.attach(payload);
-            if (body == null) {
-                return -1;
-            }
 
-            byte[] message = Header.attach(body);
-            out.write(message);
-            out.flush();
-            return message.length;
+        OutputStream out = clientConnection.getOutputStream();
+        if (out == null) {
+            throw new IOException("clientConnection output stream is null, client is disconnected");
         }
-        catch (IOException e) {
-            return -1;
-        }
+        byte[] body = CRC.attach(payload);
+
+        byte[] message = Header.attach(body);
+        out.write(message);
+        out.flush();
+        return message.length;
     }
     
     
     /**
-     * Receives bytes across the socket. If the read could not be performed or either the header 
-     * or crc check fails, {@code null} is returned. This method validates and detaches the crc and
-     * header bytes if valid.
-     * <p>
+     * Receives bytes across the socket.
+     *
+     * If the read could not be performed or either the header or crc check fails, an exception is
+     * thrown. This method validates and detaches the crc and header bytes if valid.
+     *
      * When reading, {@code Header.SIZE} bytes are first read and parsed as a {@code Header.Info} 
      * object. If the header CRC check passes, {@code Header.Info::size} bytes are read. If the 
      * CRC check passes for this body, the payload is returned.
      *
      * @param clientConnection  the client to receive from
      *
-     * @return the latest message in the client's buffer.
+     * @return the latest message in the client's buffer. If there is no message to be received,
+     *         {@code null} will be returned.
+     *
+     * @throws NullPointerException  if {@code clientConnection} is null.
+     * @throws IOException           if a network error occurs.
      */
-    public byte[] recv(JClientSocket clientConnection) {
-        try {
-            InputStream in = clientConnection.getInputStream();
-            
-            // Read header
-            byte[] header = new byte[Header.SIZE];
-            int headerSize = in.read(header);
-            if (headerSize <= 0) {
-                return null;
-            }
-            
-            // Validate header
-            Header.Info info = Header.validateAndParse(header);
-            if (info == null) {
-                return null;
-            }
-            
-            // Read message
-            byte[] body = new byte[info.size];
-            int bodySize = in.read(body);
-            if (bodySize != body.length) {
-                return null;
-            }
-            
-            // Validate and return message
-            byte[] payload = CRC.checkAndRemove(body);
-            return payload;
+    public byte[] recv(JClientSocket clientConnection) throws IOException {
+        InputStream in = clientConnection.getInputStream();
+        if (in == null) {
+            throw new IOException("clientConnection input stream is null, client is disconnected");
         }
-        catch (IOException e) {
+
+        byte[] header = new byte[Header.SIZE];
+        int headerSize = in.read(header);
+        if (headerSize == -1) {
             return null;
         }
-        catch (NullPointerException e) {
-            return null;
-        }
+        Header.Info info = Header.validateAndParse(header);
+
+        byte[] body = new byte[info.size];
+        int bodySize = in.read(body);
+        byte[] payload = CRC.checkAndRemove(body);
+        return payload;
     }
     
     
     /**
-     * Closes the socket connection. If the connection cannot be closed, a {@code RuntimeException}
-     * is thrown.
+     * Closes the socket connection.
+     *
+     * @throws RuntimeException  if the connection cannot be closed.
      */
     public void close() {
-        if (this.serverSocket != null) {
-            try {
-                this.serverSocket.close();
-            }
-            catch (IOException e) {
-                throw new RuntimeException("cannot close socket: " + e);
-            }
+        try {
+            this.serverSocket.close();
+        }
+        catch (IOException e) {
+            throw new RuntimeException("cannot close socket: " + e);
         }
     }
     

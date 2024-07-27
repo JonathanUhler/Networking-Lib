@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import jnet.Bytes;
 import jnet.CRC;
+import jnet.MissingDataException;
 
 
 public class TestCRC {
@@ -21,6 +22,11 @@ public class TestCRC {
                 Assert.assertEquals(generated, expected);
             }
         }
+    }
+
+    @Test
+    public void testCrcWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> CRC.crc32(null));
     }
 
     @Test
@@ -48,6 +54,35 @@ public class TestCRC {
 
             Assert.assertTrue(passed);
         }
+    }
+
+    @Test
+    public void testAttachToNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> CRC.attach(null));
+    }
+
+    @Test
+    public void testAttachToEmptyArgument() {
+        Assert.assertEquals(CRC.attach(new byte[] {}).length, CRC.NUM_BYTES);
+    }
+
+    @Test
+    public void testCheckWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> CRC.check(null));
+    }
+
+    @Test
+    public void testCheckWithShortArgument() {
+        Assert.assertThrows(MissingDataException.class, () -> CRC.check(new byte[] {}));
+        Assert.assertThrows(MissingDataException.class, () -> CRC.check(new byte[] {0,1,2}));
+    }
+
+    @Test
+    public void testCheckWithEmptyPayload() {
+        byte[] expected = new byte[0];
+        byte[] body = CRC.attach(expected);
+        byte[] generated = CRC.checkAndRemove(body);
+        Assert.assertArrayEquals(generated, expected);
     }
 
     @Test

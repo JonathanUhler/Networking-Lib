@@ -6,6 +6,7 @@ import org.junit.Assume;
 import jnet.Bytes;
 import jnet.CRC;
 import jnet.Header;
+import jnet.MalformedDataException;
 
 
 public class TestHeader {
@@ -32,12 +33,21 @@ public class TestHeader {
     }
 
     @Test
+    public void testAttachToNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Header.attach(null));
+    }
+
+    @Test
+    public void testValidateWithNullArgument() {
+        Assert.assertThrows(NullPointerException.class, () -> Header.attach(null));
+    }
+
+    @Test
     public void testMissingCrc() {
         String data = TestMain.randomString(100);
         byte[] payload = Bytes.serialize(data);
-        byte[] message = Header.attach(payload);
 
-        Assert.assertNull(message);
+        Assert.assertThrows(MalformedDataException.class, () -> Header.attach(payload));
     }
 
     @Test
@@ -52,9 +62,7 @@ public class TestHeader {
         System.arraycopy(payload, 0, body, 0, payload.length);
         System.arraycopy(crc, 0, body, body.length - crc.length, crc.length);
 
-        byte[] message = Header.attach(payload);
-
-        Assert.assertNull(message);
+        Assert.assertThrows(MalformedDataException.class, () -> Header.attach(payload));
     }
 
 }

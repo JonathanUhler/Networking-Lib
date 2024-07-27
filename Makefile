@@ -33,7 +33,7 @@ test_jnet: jnet
 	javac -cp '.:$(SRC_DIR)/lib/*:$(REL_DIR)/*' -d $(OBJ_DIR)/tests \
 		$(shell find tests/jnet -name '*.java')
 	java -cp '.:$(SRC_DIR)/lib/*:$(OBJ_DIR)/tests:$(REL_DIR)/*' org.junit.runner.JUnitCore \
-		TestBytes TestCRC TestHeader
+		TestBytes TestCRC TestHeader TestNetworking
 
 pnet: rel_dir
 	mkdir -p $(REL_DIR)/pnet
