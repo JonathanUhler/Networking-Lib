@@ -29,9 +29,8 @@ list of make targets, expect utilities targets (e.g. creating build directories)
 
 # Using Networking-Lib
 Networking-Lib supports client and server communication both with and without a secure connection.
-For more implementation details of Networking-Lib communications, see "Networking-Lib-Spec.md" in
-the docs directory. API documentation is included as javadoc comments, which can be viewed by
-building the docs with `make javadoc`.
+API documentation is included as javadoc comments, which can be viewed by building the docs
+with `make javadoc`.
 
 ## Establishing Connections
 There are two important classes for both secure and non-secure connections, `jnet.JClientSocket`
@@ -46,8 +45,8 @@ bind to an address and port with `bind(String, int)`. There are three methods th
 | `clientCommunicated(byte[], JClientSocket)` | Called when any client sends a message to the server.  |
 | `clientDisconnected(JClientSocket)`         | Called when a client has disconnected from the server. |
 
-`JClientSocket`s do not have any methods that need to be implemented. A client socket can be connected
-to an address with `connect(String, int)`.
+`JClientSocket`s do not have any methods that need to be implemented. A client socket can be
+connected to an address with `connect(String, int)`.
 
 A basic server-client connection might look like:
 
@@ -91,17 +90,17 @@ client.close();
 server.close();
 ```
 
-Secure connections require the usual definition of a keystore file and keystore password (and possibly a
-truststore file for use with self-signed certificates), but the API is otherwise the same for both clients
-and sockets.
+Secure connections require the usual definition of a keystore file and keystore password (and
+possibly a truststore file for use with self-signed certificates), but the API is otherwise the
+same for both clients and sockets.
 
-## Sending the Receiving Information
+## Sending and Receiving Information
 Networking-Lib uses byte arrays for all communications. Internally, CRC checks are performed on all
-messages, and `send`/`recv` methods have the potential to throw a `jnet.MalformedDataException` if a CRC
-check fails. The `jnet.Bytes` provides a set of utility methods to convert between bytes and integers,
-strings, or arbitrary serializable objects.
+messages, and `send`/`recv` methods have the potential to throw a `jnet.MalformedDataException` if
+a CRC check fails. The `jnet.Bytes` provides a set of utility methods to convert between bytes and
+integers, strings, or arbitrary serializable objects.
 
-The server and client `send` methods are overloaded to support sending a byte array directory or a string,
-which acts as a wrapper for `Bytes.stringToBytes`. The `recv` method will always return a byte array, that
-can then be interpreted by the caller. If the value of a communication is known to be a string, `srecv`
-can be used instead to interpret result of `recv` as a string.
+The server and client `send` methods are overloaded to support sending a byte array directory or a
+string, which acts as a wrapper for `Bytes.stringToBytes`. The `recv` method will always return a
+byte array, that can then be interpreted by the caller. If the value of a communication is known
+to be a string, `srecv` can be used instead to interpret result of `recv` as a string.
