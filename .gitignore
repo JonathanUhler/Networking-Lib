@@ -6,6 +6,7 @@
 
 # Compiled/artifact files
 obj
+bin
 __pycache__
 
 # Deprecated and auto-generated files
