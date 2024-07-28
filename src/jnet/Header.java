@@ -24,8 +24,7 @@ package jnet;
  *                        {@code header + body} in that order.
  * </ul>
  * <p>
- * The header managed by this class is defined as a byte array containing the following (see 
- * documention/Networking-Lib-Specification.docx for more information):
+ * The header managed by this class is defined as a byte array containing the following:
  * <table style="border: 1px solid black">
  *  <caption>Bytes</caption>
  *  <tr style="border: 1px solid black">
