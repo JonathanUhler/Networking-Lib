@@ -15,9 +15,9 @@ import java.io.IOException;
  */
 public class JClientSocket {
     
-    private Socket clientSocket;
-    private InputStream in;
-    private OutputStream out;
+    protected Socket clientSocket;
+    protected InputStream in;
+    protected OutputStream out;
     
     
     /**

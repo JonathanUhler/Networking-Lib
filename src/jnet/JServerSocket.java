@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class JServerSocket {
     
-    private ServerSocket serverSocket;
+    protected ServerSocket serverSocket;
     
     
     /**

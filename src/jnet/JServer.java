@@ -60,9 +60,9 @@ public abstract class JServer {
     
     
     private Map<JClientSocket, Thread> clientConnections;
-    private JServerSocket serverSocket;
-    private String ip;
-    private int port;
+    protected JServerSocket serverSocket;
+    protected String ip;
+    protected int port;
     
     
     /**
@@ -79,6 +79,11 @@ public abstract class JServer {
 	
         this.clientConnections = new HashMap<>();
 
+        this.bind();
+    }
+
+
+    protected void bind() throws IOException {
         this.serverSocket = new JServerSocket();
         this.serverSocket.bind(this.ip, this.port, JServer.BACKLOG);
         
@@ -115,7 +120,7 @@ public abstract class JServer {
      * This method runs in the main thread of  this {@code JServer} object. Other operations are
      * managed by separate secondary threads.
      */
-    private void accept() {
+    protected void accept() {
         // Unconditionally wait for and accept client connections, then assign them an id/place in
         // the array and create a ClientSock object to represent that conneciton and allow .send()
         // calls towards that client

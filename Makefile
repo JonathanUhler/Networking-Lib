@@ -6,10 +6,13 @@ REL_DIR      := rel
 JAVADOC_DIR  := docs/javadoc
 PYDOC_DIR    := docs/pydoc
 
+TEST_KEYSTORE_PASSWORD := changeit
+
 
 .PHONY: compile_jnet \
 	jar_jnet     \
 	jnet         \
+	gen_jks      \
 	test_jnet    \
 	pnet         \
 	javadoc      \
@@ -29,11 +32,40 @@ jar_jnet: rel_dir
 
 jnet: compile_jnet jar_jnet
 
-test_jnet: jnet
+gen_jks:
+	test $(TEST_KEYSTORE_FILE)
+	@keytool                                             \
+		-genkey                                      \
+		-alias localhost                             \
+		-keyalg rsa                                  \
+		-dname "cn=, ou=, o=, l=, s=, c="            \
+		-validity 1                                  \
+		-keystore "$(OBJ_DIR)/$(TEST_KEYSTORE_FILE)" \
+		-storepass "$(TEST_KEYSTORE_PASSWORD)"
+	@keytool                                             \
+		-export                                      \
+		-alias localhost                             \
+		-file "$(OBJ_DIR)/$(TEST_KEYSTORE_FILE).pem" \
+		-keystore "$(OBJ_DIR)/$(TEST_KEYSTORE_FILE)" \
+		-rfc                                         \
+		-storepass "$(TEST_KEYSTORE_PASSWORD)"
+	@keytool                                                \
+		-import                                         \
+		-alias localhost                                \
+		-file "$(OBJ_DIR)/$(TEST_KEYSTORE_FILE).pem"    \
+		-keystore "$(OBJ_DIR)/$(TEST_KEYSTORE_FILE).ts" \
+		-storepass "$(TEST_KEYSTORE_PASSWORD)"
+
+test_jnet: jnet gen_jks
 	javac -cp '.:$(SRC_DIR)/lib/*:$(REL_DIR)/*' -d $(OBJ_DIR)/tests \
 		$(shell find tests/jnet -name '*.java')
-	java -cp '.:$(SRC_DIR)/lib/*:$(OBJ_DIR)/tests:$(REL_DIR)/*' org.junit.runner.JUnitCore \
-		TestBytes TestCRC TestHeader TestNetworking
+	java -cp '.:$(SRC_DIR)/lib/*:$(OBJ_DIR)/tests:$(REL_DIR)/*'            \
+		-Djavax.net.ssl.keyStore=$(OBJ_DIR)/$(TEST_KEYSTORE_FILE)      \
+		-Djavax.net.ssl.keyStorePassword=$(TEST_KEYSTORE_PASSWORD)     \
+		-Djavax.net.ssl.trustStore=$(OBJ_DIR)/$(TEST_KEYSTORE_FILE).ts \
+		-Djavax.net.ssl.trustStorePassword=$(TEST_KEYSTORE_PASSWORD)   \
+		org.junit.runner.JUnitCore                                     \
+		TestBytes TestCRC TestHeader TestNetworking TestSecureNetworking
 
 pnet: rel_dir
 	mkdir -p $(REL_DIR)/pnet

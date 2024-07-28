@@ -13,7 +13,6 @@ import jnet.JClientSocket;
 
 
 public class TestSecureNetworking {
-    /*
 
     private class EchoServer extends JSSLServer {
         public EchoServer(String ip, int port) throws IOException {
@@ -40,7 +39,6 @@ public class TestSecureNetworking {
 
     @Test
     public void testServerConnectDisconnect() throws IOException {
-        // We do not expect any exception here
         JSSLServer server = new EchoServer("localhost", 9000);
         server.close();
     }
@@ -87,6 +85,5 @@ public class TestSecureNetworking {
         client.close();
         server.close();
     }
-    */
 
 }
