@@ -25,7 +25,7 @@ class Info:
         size_bytes: bytes = header[BODY_LENGTH_OFFSET:(BODY_LENGTH_OFFSET + BODY_LENGTH_SIZE)]
         crc_bytes: bytes = header[CRC_OFFSET:(CRC_OFFSET + CRC_SIZE)]
 
-        self.id = header[0]
+        self.id = bytes([header[0]])
         self.size = byteutils.bytes_to_int(size_bytes)
         self.crc = byteutils.bytes_to_int(crc_bytes)
 

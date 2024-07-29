@@ -11,7 +11,7 @@ NUM_BYTES: Final = NUM_NIBBLES // 2
 def crc32(b: bytes) -> int:
     if (b is None):
         raise TypeError("b cannot be None")
-    return binascii.crc32(b)
+    return binascii.crc32(b) - (2 ** 31)  # Return as signed int32
 
 
 def _generate(payload: bytes) -> bytes:

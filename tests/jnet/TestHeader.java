@@ -39,7 +39,7 @@ public class TestHeader {
 
     @Test
     public void testValidateWithNullArgument() {
-        Assert.assertThrows(NullPointerException.class, () -> Header.attach(null));
+        Assert.assertThrows(NullPointerException.class, () -> Header.validateAndParse(null));
     }
 
     @Test
@@ -62,7 +62,7 @@ public class TestHeader {
         System.arraycopy(payload, 0, body, 0, payload.length);
         System.arraycopy(crc, 0, body, body.length - crc.length, crc.length);
 
-        Assert.assertThrows(MalformedDataException.class, () -> Header.attach(payload));
+        Assert.assertThrows(MalformedDataException.class, () -> Header.attach(body));
     }
 
 }
