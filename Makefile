@@ -70,7 +70,13 @@ test_jnet: jnet gen_jks
 pnet: bin_dir
 	mkdir -p $(BIN_DIR)/pnet
 	rsync -r --exclude "*~" $(PNET_SRC_DIR) $(BIN_DIR)
-	tar -czf $(BIN_DIR)/pnet.tar.gz -C $(BIN_DIRR) pnet
+	tar -czf $(BIN_DIR)/pnet.tar.gz -C $(BIN_DIR) pnet
+
+test_pnet: pnet
+	python3 -m venv $(BIN_DIR)/venv
+	. $(BIN_DIR)/venv/bin/activate
+	pip3 install ./$(BIN_DIR)/pnet pytest
+	python3 -m pytest tests/pnet
 
 javadoc: javadoc_dir
 	javadoc $(shell find $(JNET_SRC_DIR) -name "*.java") -d $(JAVADOC_DIR)

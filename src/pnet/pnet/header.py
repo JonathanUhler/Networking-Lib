@@ -1,6 +1,7 @@
 from typing import Final
 from pnet import crc
 from pnet import byteutils
+from pnet.error import MissingDataError, MalformedDataError
 
 
 SIZE: Final = 8 + crc.NUM_BYTES

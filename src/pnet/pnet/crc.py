@@ -1,6 +1,7 @@
 import binascii
 from typing import Final
 from pnet import byteutils
+from pnet.error import MissingDataError, MalformedDataError
 
 
 NUM_NIBBLES: Final = 8

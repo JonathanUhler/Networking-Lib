@@ -1,0 +1,6 @@
+class MissingDataError(Exception):
+    ...
+
+
+class MalformedDataError(Exception):
+    ...
