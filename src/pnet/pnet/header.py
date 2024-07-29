@@ -1,8 +1,3 @@
-"""
-
-"""
-
-
 from typing import Final
 from pnet import crc
 from pnet import byteutils
@@ -19,12 +14,12 @@ CRC_SIZE: Final = crc.NUM_BYTES
 class Info:
 
     def __init__(self, header: bytes):
-        if (header is None or len(header) != SIZE):
-            raise ValueError(f"invalid header length, expected {SIZE}, found " +
-                             f"{('None' if header is None else f'{len(header)}')}")
-
+        if (header is None):
+            raise TypeError("header cannot be None")
+        if (len(header) != SIZE):
+            raise MissingDataError(f"invalid header length, expected {SIZE}, found {len(header)}")
         if (not crc.check(header)):
-            raise ValueError("invalid header crc")
+            raise MalformedDataError("invalid header crc")
 
         size_bytes: bytes = header[BODY_LENGTH_OFFSET:(BODY_LENGTH_OFFSET + BODY_LENGTH_SIZE)]
         crc_bytes: bytes = header[CRC_OFFSET:(CRC_OFFSET + CRC_SIZE)]
@@ -33,15 +28,15 @@ class Info:
         self.size = byteutils.bytes_to_int(size_bytes)
         self.crc = byteutils.bytes_to_int(crc_bytes)
 
-        if (self.size <= 0):
-            raise ValueError(f"invalid size: {self.size}")
+        if (self.size < 0):
+            raise MalformedDataError(f"invalid payload size: {self.size}")
 
 
 
 def _generate(body: bytes) -> bytes:
     has_valid_crc: bool = crc.check(body)
     if (not has_valid_crc):
-        return None
+        raise MalformedDataError("body has invalid crc")
 
     length: int = len(body)
     length_bytes: bytes = byteutils.int_to_bytes(length)
@@ -52,17 +47,13 @@ def _generate(body: bytes) -> bytes:
 
 
 def attach(body: bytes) -> bytes:
-    header: bytes = _generate(body)
-    if (header is None):
-        return None
+    if (body is None):
+        raise TypeError("body cannot be None")
 
+    header: bytes = _generate(body)
     message: bytes = header + body
     return message
 
 
 def validate_and_parse(header: bytes) -> Info:
-    try:
-        info: Info = Info(header)
-        return info
-    except ValueError:
-        return None
+    return Info(header)

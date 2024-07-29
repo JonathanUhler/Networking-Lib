@@ -335,8 +335,8 @@ public abstract class JServer {
         Thread clientThread = this.clientConnections.get(clientSocket);
         if (clientThread != null) {
             clientThread.interrupt();
-            clientSocket.close();
         }
+        clientSocket.close();
     }
     
     
