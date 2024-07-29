@@ -5,6 +5,7 @@ import java.net.Socket;
 import java.lang.Thread;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.io.IOException;
 
 
@@ -199,21 +200,20 @@ public abstract class JServer {
      * @param clientSocket  the {@code JClientSocket} object to listen to.
      */
     protected void listenOnClient(JClientSocket clientSocket) {
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             byte[] recv;
             try {
                 recv = this.serverSocket.recv(clientSocket);
-                if (recv == null) {
-                    continue;
-                }
             }
             catch (IOException e) {
                 continue;
             }
 
             if (recv == null) {
-                this.clientDisconnected(clientSocket);
-                this.clientConnections.remove(clientSocket);
+                if (!Thread.currentThread().isInterrupted()) {
+                    this.clientDisconnected(clientSocket);
+                    this.clientConnections.remove(clientSocket);
+                }
                 return;
             }
             
@@ -326,11 +326,16 @@ public abstract class JServer {
             throw new NullPointerException("clientSocket cannot be null");
         }
         
+        this.cleanUpClient(clientSocket);
+        this.clientConnections.remove(clientSocket);
+    }
+
+
+    private void cleanUpClient(JClientSocket clientSocket) {
         Thread clientThread = this.clientConnections.get(clientSocket);
         if (clientThread != null) {
             clientThread.interrupt();
             clientSocket.close();
-            this.clientConnections.remove(clientSocket);
         }
     }
     
@@ -343,11 +348,15 @@ public abstract class JServer {
      *
      * @see remove
      */
-    public void close() {
+    public void close() { 
         for (JClientSocket clientSocket : this.clientConnections.keySet()) {
-            this.remove(clientSocket);
+            // We don't use JServer::remove here because doing so would cause a case of concurrent
+            // modification with this loop. Instead, we simply clean up each client socket, and
+            // clear out the list of client connections after iteration is complete.
+            this.cleanUpClient(clientSocket);
         }
-        
+
+        this.clientConnections.clear();
         this.serverSocket.close();
     }
     

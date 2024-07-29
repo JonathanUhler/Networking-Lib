@@ -139,6 +139,23 @@ public class TestNetworking {
     }
 
     @Test
+    public void testManyClientsThenClose() throws IOException {
+        JServer server = new EchoServer("localhost", 9000);
+
+        for (int i = 0; i < JServer.BACKLOG; i++) {
+            JClientSocket client = new JClientSocket();
+            client.connect(server.getIP(), server.getPort());
+
+            String expected = TestMain.randomString(TestMain.RANDOM_DIS.nextInt(1024));
+            client.send(expected);
+            String generated = client.srecv();
+            Assert.assertEquals(generated, expected);
+        }
+
+        server.close();
+    }
+
+    @Test
     public void testSendToNull() throws IOException {
         JServer server = new EchoServer("localhost", 9000);
         Assert.assertThrows(NullPointerException.class, () -> server.send(new byte[0], null));
