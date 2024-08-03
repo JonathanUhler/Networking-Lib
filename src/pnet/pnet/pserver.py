@@ -1,9 +1,8 @@
 import socket
 from socket import SocketType
-from threading import Thread, Event
+from threading import Thread, Event, enumerate
 from typing import Union, Final
-from abc import ABC
-from pnet import header
+from abc import ABC, abstractmethod
 from pnet import byteutils
 from pnet.pclientsocket import PClientSocket
 from pnet.pserversocket import PServerSocket
@@ -19,6 +18,7 @@ class PServer(ABC):
         self.port = port
 
         self.client_connections = {}
+        self.accept_interrupter = None
 
         self._bind()
 
@@ -27,7 +27,8 @@ class PServer(ABC):
         self.server_socket = PServerSocket()
         self.server_socket.bind(self.ip, self.port, PServer.BACKLOG)
 
-        accept_thread: Thread = Thread(target = self.accept)
+        self.accept_interrupter: Event = Event()
+        accept_thread: Thread = Thread(target = self._accept)
         accept_thread.start()
 
 
@@ -40,7 +41,7 @@ class PServer(ABC):
 
 
     def _accept(self) -> None:
-        while (True):
+        while (not self.accept_interrupter.is_set()):
             try:
                 client_connection: SocketType = self.server_socket.accept()
                 self._add(client_connection)
@@ -52,17 +53,11 @@ class PServer(ABC):
         if (client_connection is None):
             return
 
-        client_socket: PClientSocket = PClientSocket(client_connection)
-        try:
-            client_socket.connect(self.ip, self.port)
-        except socket.error:
-            return
-
         thread_interrupter: Event = Event()
         client_thread: Thread = Thread(target = self._listen_on_client,
-                                       args = (client_socket, thread_interrupter))
-        self.client_connections[client_socket] = (client_thread, thread_interrupter)
-        self.client_connected(client_socket)
+                                       args = (client_connection, thread_interrupter))
+        self.client_connections[client_connection] = (client_thread, thread_interrupter)
+        self.client_connected(client_connection)
         client_thread.start()
 
 
@@ -87,7 +82,7 @@ class PServer(ABC):
             if (recv is None):
                 if (not interrupter.is_set()):
                     self.client_disconnected(client_socket)
-                    del self.client_connections.remove[client_socket]
+                    self.client_connections[client_socket] = (None, None)
                 return
 
             self.client_communicated(recv, client_socket)
@@ -135,5 +130,6 @@ class PServer(ABC):
         for client_socket in self.client_connections:
             self._clean_up_client(client_socket)
 
+        self.accept_interrupter.set()
         self.client_connections.clear()
         self.server_socket.close()

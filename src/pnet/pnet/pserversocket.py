@@ -2,11 +2,13 @@ import socket
 from socket import SocketType
 from pnet import crc
 from pnet import header
-from pnet import byteutils
 from pnet.pclientsocket import PClientSocket
 
 
 class PServerSocket:
+
+    def __init__(self):
+        self.server_socket = None
 
     def bind(self, ip: str, port: int, backlog: int) -> None:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,7 +21,7 @@ class PServerSocket:
         return client_connection
 
 
-    def send(self, payload: bytes, client_connection: PClientSocket) -> int:
+    def send(self, payload: bytes, client_connection: SocketType) -> int:
         if (payload is None):
             raise TypeError("payload cannot be None")
         if (client_connection is None):
@@ -30,7 +32,7 @@ class PServerSocket:
         return client_connection.send(message)
 
 
-    def recv(self, client_connection: PClientSocket) -> bytes:
+    def recv(self, client_connection: SocketType) -> bytes:
         if (client_connection is None):
             raise TypeError("client_connection cannot be None")
 

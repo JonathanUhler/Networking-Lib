@@ -36,9 +36,6 @@ public class TestNetworking {
     }
 
 
-    private JServer server;
-
-
     @Test
     public void testServerConnectDisconnect() throws IOException {
         // We do not expect any exception here
