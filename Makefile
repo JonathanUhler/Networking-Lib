@@ -110,7 +110,8 @@ javadoc_dir:
 
 # Creates html docs for pnet
 pydoc: pydoc_dir
-	@echo "pydoc not yet implemented"
+	python3 -m pydoc -w $(PNET_SRC_DIR)/pnet/*.py
+	mv *.html $(PYDOC_DIR)
 
 # Helper target to create a directory for storing pnet docs
 pydoc_dir:

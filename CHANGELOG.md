@@ -26,6 +26,13 @@ string generally refer to the following scopes of changes:
 * `patch`: A non-breaking change without any major significance (e.g. fixing typos, updating
   comments or documentation, algorithm optimization). That is, version 1.0.1 must support all the
   features of version 1.0.0, and version 1.0.0 must support all the features of version 1.0.1.
+  
+## [1.1.0] - 2024-08-04
+### Added
+* First full release of Networking-Lib in Python
+### Changed
+* Improve thread management for jnet
+* Expand unit tests for jnet
 
 ## [1.0.0] - 2024-07-28
 ### Added
