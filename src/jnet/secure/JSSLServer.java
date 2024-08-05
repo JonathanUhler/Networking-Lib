@@ -10,8 +10,7 @@ import jnet.JServer;
 
 /**
  * C-style server template. This class provides the framework to create a server compatible with the
- * processes of this library. By default, the server runs on 127.0.0.1:9000, but this can be changed
- * with the second constructor. This server supports SSL security.
+ * processes of this library. This server supports SSL security.
  * <p>
  * Some notable abstract methods include:
  * <table style="border: 1px solid black">

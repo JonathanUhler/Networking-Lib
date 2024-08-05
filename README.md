@@ -1,7 +1,9 @@
 # Networking-Lib
-A C-style, byte-oriented networking library for Java. Networking-Lib provides safety utilities and
-a more convenient API on top of the existing `java.net.[Server]Socket` and
+A C-style, byte-oriented networking library. Networking-Lib provides safety utilities and a more
+convenient API on top of the existing `java.net.[Server]Socket` and
 `javax.net.ssl.SSL[Server]Socket` classes.
+
+An equivalent API, with the same CRC and header management, is also provided for Python.
 
 
 # Dependencies
@@ -21,9 +23,13 @@ list of make targets, expect utilities targets (e.g. creating build directories)
 | `compile_jnet` | Compiles the Java source files into class files and places them in the `obj` directory. |
 | `jar_jnet`     | Creates a JAR file from the compiled class files and puts it in the `bin` directory.    |
 | `jnet`         | Wraps the calls to `compile_jnet` and `jar_jnet` in one target.                         |
+| `pnet`         | Creates a TAR archive with all files necessary to install pnet locally with pip.        |
 | `gen_jks`      | Creates a keystore, certificate, and truststore to use for unit tests of `jnet.secure`. |
+| `gen_pks`      | Creates a certificate and key to use for unit tests of `pnet.secure`.                   |
 | `test_jnet`    | Compiles and runs unit tests for jnet.                                                  |
+| `test_pnet`    | Runs unit tests for pnet.                                                               |
 | `javadoc`      | Builds javadoc documentation for jnet.                                                  |
+| `pydoc`        | Builds pydoc documentation for pnet.                                                    |
 | `clean`        | Removes all generated files (the `bin`, `obj`, and `javadoc` directories).              |
 
 

@@ -36,9 +36,6 @@ public class TestNetworking {
     }
 
 
-    private JServer server;
-
-
     @Test
     public void testServerConnectDisconnect() throws IOException {
         // We do not expect any exception here
@@ -135,6 +132,23 @@ public class TestNetworking {
         }
 
         client.close();
+        server.close();
+    }
+
+    @Test
+    public void testManyClientsThenClose() throws IOException {
+        JServer server = new EchoServer("localhost", 9000);
+
+        for (int i = 0; i < JServer.BACKLOG; i++) {
+            JClientSocket client = new JClientSocket();
+            client.connect(server.getIP(), server.getPort());
+
+            String expected = TestMain.randomString(TestMain.RANDOM_DIS.nextInt(1024));
+            client.send(expected);
+            String generated = client.srecv();
+            Assert.assertEquals(generated, expected);
+        }
+
         server.close();
     }
 
