@@ -1,73 +1,48 @@
+"""
+C-style socket wrapper for clients with SSL security support.
+
+Author: Jonathan Uhler
+"""
+
+
 import ssl
+from ssl import SSLContext
 import socket
 from socket import SocketType
-from typing import Union
-import pnet.crc
-import pnet.header
-import pnet.byteutils
+from pnet.pclientsocket import PClientSocket
 
 
-class PSSLClientSocket:
+class PSSLClientSocket(PClientSocket):
+    """
+    A secure implementation of `PClientSocket`.
+    """
 
-    def __init__(self, client_socket: SocketType = None):
-        if (not client_socket is None):
-            self.client_socket = ssl.wrap_socket(client_socket)
-        self.client_socket = None
+    def __init__(self, cafile: str, client_socket: SocketType = None):
+        """
+        Constructs a new `PSSLClientSocket` object.
+
+        The internal `SocketType` representation will only be initialized upon calling `connect`.
+
+        Arguments:
+         cafile (str):               the path to the certificate authority file for this client to
+                                     verify against upon attempting a connection.
+         client_socket (SocketType): an optional socket object used to begin the initialization of
+                                     this `PClientSocket` object.
+        """
+
+        self.ssl_context = SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.ssl_context.load_verify_locations(cafile = cafile)
+        if (client_socket is not None):
+            client_socket = self.ssl_context.wrap_socket(client_socket)
+        super().__init__(client_socket = client_socket)
 
 
     def connect(self, ip: str, port: int) -> None:
+        """
+        Connects this socket to a destination address with SSL security support.
+        """
+
         if (self.client_socket is None):
-            self.client_socket = ssl.wrap_socket(socket.socket(socket.AF_INET, socket.SOCK_STREAM))
+            unsecure_socket: SocketType = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket = self.ssl_context.wrap_socket(unsecure_socket, server_hostname = ip)
         self.client_socket.connect((ip, port))
-
-
-    def send(self, payload: Union[bytes, str]) -> int:
-        if (self.client_socket is None):
-            return -1
-
-        if (isinstance(payload, str)):
-            payload = byteutils.str_to_bytes(payload)
-
-        try:
-            body: bytes = crc.attach(payload)
-            if (body is None):
-                return -1
-            message: bytes = header.attach(body)
-            if (message is None):
-                return -1
-            return self.client_socket.send(message)
-        except socket.error:
-            return -1
-
-
-    def recv(self) -> bytes:
-        if (self.client_socket is None):
-            return None
-
-        try:
-            header_bytes: bytes = self.client_socket.recv(header.SIZE)
-            header_size: int = len(header_bytes)
-            if (header_size <= 0):
-                return None
-
-            info: header.Info = header.validate_and_parse(header_bytes)
-            if (info is None):
-                return None
-
-            body: bytes = self.client_socket.recv(info.size)
-            payload: bytes = crc.check_and_remove(body)
-            return payload
-        except socket.error:
-            return None
-
-
-    def srecv(self) -> str:
-        return byteutils.bytes_to_str(self.recv())
-
-
-    def close(self) -> None:
-        if (not self.client_socket is None):
-            try:
-                self.client_socket.close()
-            except socket.error as e:
-                raise RuntimeError(f"cannot close socket: {e}") from e

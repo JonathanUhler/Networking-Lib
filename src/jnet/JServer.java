@@ -11,8 +11,7 @@ import java.io.IOException;
 
 /**
  * C-style server template. This class provides the framework to create a server compatible with the
- * processes of this library. By default, the server runs on 127.0.0.1:9000, but this can be changed
- * with the second constructor.
+ * processes of this library.
  * <p>
  * Some notable abstract methods include:
  * <table style="border: 1px solid black">
@@ -84,6 +83,9 @@ public abstract class JServer {
     }
 
 
+    /**
+     * Binds this server's socket to the server's address.
+     */
     protected void bind() throws IOException {
         this.serverSocket = new JServerSocket();
         this.serverSocket.bind(this.ip, this.port, JServer.BACKLOG);
@@ -96,9 +98,9 @@ public abstract class JServer {
     
     
     /**
-     * Returns the IP address the server has been binded to.
+     * Returns the IP address the server has been bound to.
      *
-     * @return the IP address the server has been binded to.
+     * @return the IP address the server has been bound to.
      */
     public String getIP() {
         return this.ip;
@@ -106,9 +108,9 @@ public abstract class JServer {
     
     
     /**
-     * Returns the port this server has been binded to.
+     * Returns the port this server has been bound to.
      *
-     * @return the port this server has been binded to.
+     * @return the port this server has been bound to.
      */
     public int getPort() {
         return this.port;
@@ -118,7 +120,7 @@ public abstract class JServer {
     /**
      * Waits for and accepts incoming client connections.
      *
-     * This method runs in the main thread of  this {@code JServer} object. Other operations are
+     * This method runs in the main thread of this {@code JServer} object. Other operations are
      * managed by separate secondary threads.
      */
     protected void accept() {
@@ -331,6 +333,15 @@ public abstract class JServer {
     }
 
 
+    /**
+     * Cleans up the resources for a given client, but does not remove the client.
+     *
+     * The clean up process involves disconnecting the client and terminating its listen thread.
+     * To avoid possible concurrency issues (between threads or while iterating over clients),
+     * this method does not modify the {@code clientConnections} map.
+     *
+     * @param clientSocket  the client to clean up.
+     */
     private void cleanUpClient(JClientSocket clientSocket) {
         Thread clientThread = this.clientConnections.get(clientSocket);
         if (clientThread != null) {
@@ -341,7 +352,7 @@ public abstract class JServer {
     
     
     /**
-     * Unbinds this server server from its port.
+     * Unbinds this server from its port.
      *
      * Before the server is closed, any clients connected are disconnected with the
      * {@code remove} method of this server.
