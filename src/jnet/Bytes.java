@@ -158,5 +158,19 @@ public class Bytes {
         }
         return new String(bytes);
     }
+
+
+    /**
+     * Returns a string array representation of a byte array.
+     *
+     * @param bytes  the byte array to convert to a string.
+     */
+    public static String toString(byte[] bytes) {
+        StringBuilder str = new StringBuilder();
+        for (byte b : bytes) {
+            str.append(String.format("%02X", b));
+        }
+        return str.toString();
+    }
     
 }
