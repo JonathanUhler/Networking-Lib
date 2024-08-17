@@ -9,6 +9,7 @@ Author: Jonathan Uhler
 
 
 import binascii
+import struct
 from typing import Final
 from pnet import byteutils
 from pnet.error import MissingDataError, MalformedDataError
@@ -52,7 +53,7 @@ def _generate(payload: bytes) -> bytes:
     """
 
     crc32_int: int = crc32(payload)
-    return byteutils.int_to_bytes(crc32_int)
+    return struct.pack("<I", crc32_int)
 
 
 def attach(payload: bytes) -> bytes:
