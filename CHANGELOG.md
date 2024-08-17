@@ -27,6 +27,10 @@ string generally refer to the following scopes of changes:
   comments or documentation, algorithm optimization). That is, version 1.0.1 must support all the
   features of version 1.0.0, and version 1.0.0 must support all the features of version 1.0.1.
   
+## [1.1.1] - 2024-08-16
+### Fixed
+* Make pnet and jnet CRC generation consistent
+  
 ## [1.1.0] - 2024-08-04
 ### Added
 * First full release of Networking-Lib in Python
