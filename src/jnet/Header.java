@@ -194,7 +194,7 @@ public class Header {
                                                Header.SIZE + ", found " + header.length);
             }
             if (!CRC.check(header)) {
-                throw new MalformedDataException("invalid header crc");
+                throw new MalformedDataException("invalid header crc in " + Bytes.toString(header));
             }
             
             byte[] size = new byte[Header.BODY_LENGTH_SIZE];

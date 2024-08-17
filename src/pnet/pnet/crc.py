@@ -34,7 +34,7 @@ def crc32(b: bytes) -> int:
 
     if (b is None):
         raise TypeError("b cannot be None")
-    return binascii.crc32(b) - (2 ** 31)  # Return as signed int32
+    return binascii.crc32(b)
 
 
 def _generate(payload: bytes) -> bytes:
