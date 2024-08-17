@@ -1,6 +1,7 @@
 import random
 import pytest
 import conftest
+import struct
 from pnet import byteutils
 from pnet import crc
 from pnet import header
@@ -47,7 +48,7 @@ class TestHeader:
         payload: bytes = byteutils.str_to_bytes(data)
         payload_for_crc: bytes = byteutils.str_to_bytes(data_for_crc)
 
-        crc_bytes: bytes = byteutils.int_to_bytes(crc.crc32(payload_for_crc))
+        crc_bytes: bytes = struct.pack("<I", crc.crc32(payload_for_crc))
         body: bytes = payload + crc_bytes
 
         with pytest.raises(MalformedDataError):
